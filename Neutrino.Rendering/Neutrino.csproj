@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <Optimize>true</Optimize>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Magnesium" Version="7.0.0-alpha" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\glTFLoader\glTFLoader.csproj" />
+    <ProjectReference Include="..\glTFLoader_Shared\glTFLoader_Shared.csproj" />
+    <ProjectReference Include="..\Magnesium.Utilities\Magnesium.Utilities.csproj" />
+  </ItemGroup>
+
+</Project>
