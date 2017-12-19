@@ -7,15 +7,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "glTFLoader", "glTFLoader\gl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "glTFLoader_Shared", "glTFLoader_Shared\glTFLoader_Shared.csproj", "{976EF0AA-4835-4B60-88B8-BF2FA02B571C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GltfDemo", "GltfDemo\GltfDemo.csproj", "{C850FC5E-4143-488D-8982-33327A30FFFC}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GltfDemo.UnitTests", "GltfDemo.UnitTests\GltfDemo.UnitTests.csproj", "{F22C808A-193F-4CD2-A8E3-917AD9C84003}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Magnesium.Utilities", "Magnesium.Utilities\Magnesium.Utilities.csproj", "{CB108602-E69B-4FA1-922A-096A4D1F349F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neutrino", "Neutrino.Rendering\Neutrino.csproj", "{35CBC5B6-3170-4882-82E8-076C3EE919BC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neutrino", "Neutrino.Rendering\Neutrino.csproj", "{35CBC5B6-3170-4882-82E8-076C3EE919BC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neutrino.UnitTests", "Neutrino.Rendering.UnitTests\Neutrino.UnitTests.csproj", "{B1F2D700-9FA0-475A-93E4-B23F4A2FF1FA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neutrino.UnitTests", "Neutrino.Rendering.UnitTests\Neutrino.UnitTests.csproj", "{B1F2D700-9FA0-475A-93E4-B23F4A2FF1FA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,10 +29,6 @@ Global
 		{976EF0AA-4835-4B60-88B8-BF2FA02B571C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{976EF0AA-4835-4B60-88B8-BF2FA02B571C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{976EF0AA-4835-4B60-88B8-BF2FA02B571C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C850FC5E-4143-488D-8982-33327A30FFFC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C850FC5E-4143-488D-8982-33327A30FFFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C850FC5E-4143-488D-8982-33327A30FFFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C850FC5E-4143-488D-8982-33327A30FFFC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F22C808A-193F-4CD2-A8E3-917AD9C84003}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F22C808A-193F-4CD2-A8E3-917AD9C84003}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F22C808A-193F-4CD2-A8E3-917AD9C84003}.Release|Any CPU.ActiveCfg = Release|Any CPU

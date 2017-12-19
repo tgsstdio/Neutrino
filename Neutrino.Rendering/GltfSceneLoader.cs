@@ -5,7 +5,6 @@ using Magnesium.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
 
 namespace Neutrino
 {
@@ -30,40 +29,91 @@ namespace Neutrino
 
             var request = new MgStorageBlockAllocationRequest();
 
-            ExtractCameras(model.Cameras, request);
-        }
-
-        public static void ExtractCameras(glTFLoader.Schema.Camera[] cameras, MgStorageBlockAllocationRequest request)
-        {
-            const int CAMERA_BUCKET_SIZE = 16;
-            if (cameras != null)
+            var cameraAllocationInfo = new GltfBucketAllocationInfo<Camera, CameraUBO>
             {
-                var noOfBuckets = cameras.Length / CAMERA_BUCKET_SIZE;
-                var remainder = cameras.Length % CAMERA_BUCKET_SIZE;
-
-                for (var i = 0; i < noOfBuckets; i += 1)
-                {
-                    InsertCameraBucket(request, CAMERA_BUCKET_SIZE);
-                }
-
-                if (remainder > 0)
-                {
-                    InsertCameraBucket(request, CAMERA_BUCKET_SIZE);
-                }
-            }
-        }
-
-        private static void InsertCameraBucket(MgStorageBlockAllocationRequest request, int CAMERA_BUCKET_SIZE)
-        {
-            int UBO_STRIDE = Marshal.SizeOf(typeof(CameraUBO));
-            ulong UBO_BUCKET_SIZE = (ulong)(UBO_STRIDE * CAMERA_BUCKET_SIZE);
-            request.Insert(new MgStorageBlockAllocationInfo
-            {
+                BucketSize = 16,
                 Usage = MgBufferUsageFlagBits.UNIFORM_BUFFER_BIT,
                 MemoryPropertyFlags = MgMemoryPropertyFlagBits.HOST_VISIBLE_BIT,
-                Size = UBO_BUCKET_SIZE,
-                ElementByteSize = 0,
-            });
+            };            
+
+            var cameras = cameraAllocationInfo.Extract(model.Cameras, request);
+
+            ProcessNodes(model, cameras);
+        }
+
+        private void ProcessNodes(Gltf model, GltfBucketContainer cameras)
+        {
+            var noOfNodes = model.Nodes != null ? model.Nodes.Length : 0;
+            var allNodes = new GtlfRenderNode[noOfNodes];
+
+            for (var i = 0; i < noOfNodes; i += 1)
+            {
+                var srcNode = model.Nodes[i];
+                var destNode = new GtlfRenderNode { };
+
+                destNode.Name = srcNode.Name;
+                destNode.NodeIndex = i;
+                destNode.CameraAllocation = cameras.GetAllocation(srcNode.Camera);
+                destNode.Children = srcNode.Children != null ? srcNode.Children : new int[] { };
+                destNode.Transform = GenerateTransform(srcNode);
+                destNode.IsMirrored = destNode.Transform.Determinant < 0;             
+
+                // TODO: meshes
+
+                allNodes[i] = destNode;
+            }
+
+            LinkToParents(allNodes);
+        }
+
+        public static TkMatrix4 GenerateTransform(Node srcNode)
+        {
+           if (srcNode.Matrix != null && srcNode.Matrix.Length == 16)
+           {
+                var src = srcNode.Matrix;
+                return new TkMatrix4(
+                    src[0],   src[1],  src[2],  src[3],
+                    src[4],   src[5],  src[6],  src[7],
+                    src[8],   src[9], src[10], src[11],
+                    src[12], src[13], src[14], src[15]
+                );
+           }
+           else
+           {
+                var firstOp =
+                    (srcNode.Scale != null && srcNode.Scale.Length == 3)
+                    ? TkMatrix4.CreateScale(srcNode.Scale[0], srcNode.Scale[1], srcNode.Scale[2])
+                    : TkMatrix4.CreateScale(1, 1, 1);
+                var secondOp =
+                    (srcNode.Rotation != null && srcNode.Rotation.Length == 4)
+                    ? TkMatrix4.Identity // TODO QUATERNION
+                    : TkMatrix4.Identity;
+                var thirdOp =
+                    (srcNode.Translation != null && srcNode.Translation.Length == 3)
+                    ? TkMatrix4.CreateTranslation(srcNode.Translation[0], srcNode.Translation[1], srcNode.Translation[2])
+                    : TkMatrix4.CreateTranslation(0, 0, 0);
+
+                // T * (R * S)
+                TkMatrix4.Mult(ref secondOp, ref firstOp, out TkMatrix4 result);
+                return TkMatrix4.Mult(thirdOp, result);
+           }
+        }
+
+        public static void LinkToParents(GtlfRenderNode[] allNodes)
+        {
+            foreach (var srcParentNode in allNodes)
+            {
+                var noOfChildren = srcParentNode.Children != null ? srcParentNode.Children.Length : 0;
+
+                if (srcParentNode.Children != null)
+                {
+                    foreach (var childIndex in srcParentNode.Children)
+                    {
+                        var child = allNodes[childIndex];
+                        child.Parent = srcParentNode.NodeIndex;
+                    }
+                }
+            }
         }
 
         private static List<byte[]> ExtractBuffers(glTFLoader.Schema.Gltf model, string baseDir)
