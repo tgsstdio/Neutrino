@@ -1,18 +1,19 @@
 ﻿using glTFLoader.Schema;
 using Magnesium;
 using System;
-using System.Collections.Generic;
 
 namespace Neutrino
 {
     public class GltfMesh
     {
         public string Name { get; set; }
+        public float[] Weights { get; }
         public GltfMeshPrimitive[] Primitives { get; private set; }
 
         public GltfMesh(Mesh mesh, GltfAccessor[] accessors)
         {
             Name = mesh.Name;
+            Weights = mesh.Weights;
             Primitives = InitializePrimitives(mesh, accessors);
         }
 

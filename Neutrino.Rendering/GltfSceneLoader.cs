@@ -2,6 +2,7 @@
 using glTFLoader.Schema;
 using Magnesium;
 using Magnesium.Utilities;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -42,12 +43,128 @@ namespace Neutrino
 
             var bufferViews = ExtractBufferViews(model);
 
-            var meshes = ExtractMeshes(model, accessors, bufferViews);
+            var meshes = ExtractMeshes(model, accessors);
+
+            AllocatePartitions(request, meshes, accessors, bufferViews);
 
             ProcessNodes(model, cameras);
         }
 
-        private GltfMesh[] ExtractMeshes(Gltf model, GltfAccessor[] accessors, GltfBufferView[] bufferViews)
+        class GltfPrimitiveStorageLocation
+        {
+            public int? Index { get; set; }
+            public int Vertex { get; set; }
+            public InterleavedOperation[] CopyOperations { get; internal set; }
+        }
+
+        class InterleavedOperation
+        {
+            public int Count { get; set; }
+            public uint LengthInBytes { get; set; }
+            public ulong SrcOffset { get; set; }
+            public ulong DstStride { get; set; }
+        }
+
+        private void AllocatePartitions(MgStorageBlockAllocationRequest request, GltfMesh[] meshes, GltfAccessor[] accessors, GltfBufferView[] bufferViews)
+        {
+            foreach(var mesh in meshes)
+            {
+                foreach (var primitive in mesh.Primitives)
+                {
+                    var locator = primitive.VertexLocations;
+
+                    var finalLocation = new GltfPrimitiveStorageLocation { };
+
+                    var totalSize = 0UL;
+                    var vertexFields = new int?[]
+                    {
+                        locator.Position,
+                        locator.Normal,
+                        locator.Tangent,
+                        locator.TexCoords0,
+                        locator.TexCoords1,
+                        locator.Color0,
+                        locator.Color1,
+                        locator.Joints0,
+                        locator.Joints1,
+                        locator.Weights0,
+                        locator.Weights1,
+                    };
+
+                    var copyOps = new List<InterleavedOperation>();
+
+                    var totalElementSize = 0U;
+                    foreach(var field in vertexFields)
+                    {
+                        if (field.HasValue)
+                        {
+                            var selected = accessors[field.Value];
+                            var op = CreateCopyOp(copyOps, selected, bufferViews);
+                            totalElementSize += op.LengthInBytes;
+                            totalSize += selected.TotalByteSize;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Position required");
+                        }
+                    }
+
+                    foreach(var op in copyOps)
+                    {
+                        op.DstStride = totalElementSize;
+                    }
+
+                    var vertexInfo = new MgStorageBlockAllocationInfo
+                    {
+                        MemoryPropertyFlags = MgMemoryPropertyFlagBits.HOST_COHERENT_BIT,
+                        Usage = MgBufferUsageFlagBits.VERTEX_BUFFER_BIT,
+                        ElementByteSize = totalElementSize,
+                        Size = totalSize,
+                    };
+
+                    finalLocation.Vertex = request.Insert(vertexInfo);
+
+                    if (locator.Indices.HasValue)
+                    {
+                        var selected = accessors[locator.Indices.Value];
+                        var op = CreateCopyOp(copyOps, selected, bufferViews);
+                        op.DstStride = selected.ElementByteSize;
+
+                        var indexInfo = new MgStorageBlockAllocationInfo
+                        {
+                            MemoryPropertyFlags = MgMemoryPropertyFlagBits.HOST_COHERENT_BIT,
+                            Usage = MgBufferUsageFlagBits.INDEX_BUFFER_BIT,     
+                            Size = selected.TotalByteSize,
+                            ElementByteSize = selected.ElementByteSize,
+                        };
+
+                        finalLocation.Index = request.Insert(indexInfo);
+                    }
+
+                    finalLocation.CopyOperations = copyOps.ToArray();
+                }                
+            }
+        }
+
+        private static InterleavedOperation CreateCopyOp(List<InterleavedOperation> destination, GltfAccessor selected, GltfBufferView[] bufferViews)
+        {
+            if (!selected.BufferView.HasValue)
+                throw new InvalidOperationException("unable to locate bufferview");
+
+            var view = bufferViews[selected.BufferView.Value];
+
+            var op = new InterleavedOperation
+            {
+                Count = selected.ElementCount,
+                SrcOffset = (ulong)(view.BufferOffset + selected.ViewOffset),
+                LengthInBytes = selected.NoOfComponents * selected.ElementByteSize,
+            };
+
+            destination.Add(op);
+            return op;
+        }
+
+        private GltfMesh[] ExtractMeshes(Gltf model, GltfAccessor[] accessors)
         {
             var noOfItems = model.Meshes != null ? model.Meshes.Length : 0;
             var output = new GltfMesh[noOfItems];
