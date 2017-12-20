@@ -1,4 +1,4 @@
-﻿namespace Neutrino.UnitTests
+﻿namespace Neutrino
 {
     public class PerVertexDefinitionEncoder
     {

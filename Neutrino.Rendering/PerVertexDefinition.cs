@@ -1,4 +1,4 @@
-﻿namespace Neutrino.UnitTests
+﻿namespace Neutrino
 {
     // max 32 bits
     public struct PerVertexDefinition

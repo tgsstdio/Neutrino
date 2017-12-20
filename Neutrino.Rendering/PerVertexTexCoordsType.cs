@@ -1,4 +1,4 @@
-﻿namespace Neutrino.UnitTests
+﻿namespace Neutrino
 {
     /// <summary>
     ///  MAX 8 / 15 => 4 bits

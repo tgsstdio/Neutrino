@@ -2,12 +2,12 @@
 using glTFLoader.Schema;
 using Magnesium;
 using Magnesium.Utilities;
-using System;
 using System.Collections.Generic;
 using System.IO;
 
 namespace Neutrino
 {
+
     public class GltfSceneLoader : IGltfSceneLoader
     {
         private readonly IMgGraphicsConfiguration mConfiguration;
@@ -38,8 +38,52 @@ namespace Neutrino
 
             var cameras = cameraAllocationInfo.Extract(model.Cameras, request);
 
+            var accessors = ExtractAccessors(model);
+
+            var bufferViews = ExtractBufferViews(model);
+
+            var meshes = ExtractMeshes(model, accessors, bufferViews);
+
             ProcessNodes(model, cameras);
         }
+
+        private GltfMesh[] ExtractMeshes(Gltf model, GltfAccessor[] accessors, GltfBufferView[] bufferViews)
+        {
+            var noOfItems = model.Meshes != null ? model.Meshes.Length : 0;
+            var output = new GltfMesh[noOfItems];
+
+            for (var i = 0; i < noOfItems; i += 1)
+            {
+                var result = new GltfMesh(model.Meshes[i], accessors, bufferViews);
+                output[i] = result;
+            }
+            return output;
+        }
+
+        private GltfAccessor[] ExtractAccessors(Gltf model)
+        {
+            var noOfItems = model.Accessors != null ? model.Accessors.Length : 0;
+            var output = new GltfAccessor[noOfItems];
+
+            for (var i = 0; i < noOfItems; i += 1)
+            {
+                output[i] = new GltfAccessor(model.Accessors[i]);                 
+            }
+
+            return output;
+        }
+
+        private static GltfBufferView[] ExtractBufferViews(glTFLoader.Schema.Gltf model)
+        {
+            var noOfItems = model.BufferViews != null ? model.BufferViews.Length : 0;
+            var output = new GltfBufferView[noOfItems];
+            for (var i = 0; i < noOfItems; i += 1)
+            {
+                output[i] = new GltfBufferView(model.BufferViews[i]);
+            }
+            return output;
+        }
+
 
         private void ProcessNodes(Gltf model, GltfBucketContainer cameras)
         {
@@ -125,7 +169,12 @@ namespace Neutrino
                 {
                     if (output.Data.Length != selectedBuffer.ByteLength)
                     {
-                        throw new InvalidDataException($"The specified length of embedded data chunk ({selectedBuffer.ByteLength}) is not equal to the actual length of the data chunk ({output.Data.Length}).");
+                        throw new InvalidDataException(
+                            string.Format(
+                                "The specified length of embedded data chunk ({0}) is not equal to the actual length of the data chunk ({1}).",
+                                selectedBuffer.ByteLength,
+                                output.Data.Length)
+                        );
                     }
                     buffers.Add(output.Data);
                 }
