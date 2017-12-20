@@ -15,7 +15,7 @@ namespace Neutrino.UnitTests
                 Normal = PerVertexNormalType.Float3,
                 Color0 = PerVertexColorType.ByteUnormRGBA,
                 Color1 = PerVertexColorType.ByteUnormRGB,
-                Tangents = PerVertexTangentType.Float4,
+                Tangent = PerVertexTangentType.Float4,
                 Weights0 = PerVertexWeightsType.UshortUnorm4,
                 Weights1 = PerVertexWeightsType.Float4,
                 Joints0 = PerVertexJointType.Ushort4,
@@ -160,7 +160,7 @@ namespace Neutrino.UnitTests
         {
             var expected = new PerVertexDefinition
             {
-                Tangents = PerVertexTangentType.None,
+                Tangent = PerVertexTangentType.None,
             };
 
             var result = PerVertexDefinitionEncoder.Encode(expected);
@@ -174,7 +174,7 @@ namespace Neutrino.UnitTests
         {
             var expected = new PerVertexDefinition
             {
-                Tangents = PerVertexTangentType.Half4,
+                Tangent = PerVertexTangentType.Half4,
             };
 
             var result = PerVertexDefinitionEncoder.Encode(expected);
@@ -188,7 +188,7 @@ namespace Neutrino.UnitTests
         {
             var expected = new PerVertexDefinition
             {
-                Tangents = PerVertexTangentType.Float4,
+                Tangent = PerVertexTangentType.Float4,
             };
 
             var result = PerVertexDefinitionEncoder.Encode(expected);
@@ -406,7 +406,7 @@ namespace Neutrino.UnitTests
                 Normal = PerVertexNormalType.None,
                 Color0 = PerVertexColorType.FloatRGBA,
                 Color1 = PerVertexColorType.None,
-                Tangents = PerVertexTangentType.Float4,
+                Tangent = PerVertexTangentType.Float4,
                 Weights0 = PerVertexWeightsType.UshortUnorm4,
                 Weights1 = PerVertexWeightsType.ByteUnorm4,
                 Joints0 = PerVertexJointType.Ushort4,
@@ -424,7 +424,7 @@ namespace Neutrino.UnitTests
         {
             Assert.AreEqual(expected.Position, actual.Position);
             Assert.AreEqual(expected.Normal, actual.Normal);
-            Assert.AreEqual(expected.Tangents, actual.Tangents);
+            Assert.AreEqual(expected.Tangent, actual.Tangent);
             Assert.AreEqual(expected.TexCoords0, actual.TexCoords0);
             Assert.AreEqual(expected.TexCoords1, actual.TexCoords1);
             Assert.AreEqual(expected.Color0, actual.Color0);

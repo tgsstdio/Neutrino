@@ -8,7 +8,7 @@
         // [3 - 4, 2]
         public PerVertexNormalType Normal { get; set; }
         // [5 - 6, 2]
-        public PerVertexTangentType Tangents { get; set; }
+        public PerVertexTangentType Tangent { get; set; }
         // [7 - 11, 4]
         public PerVertexTexCoordsType TexCoords0 { get; set; }
         // [12 - 15, 4]

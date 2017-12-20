@@ -54,7 +54,7 @@ namespace Neutrino
 
             for (var i = 0; i < noOfItems; i += 1)
             {
-                var result = new GltfMesh(model.Meshes[i], accessors, bufferViews);
+                var result = new GltfMesh(model.Meshes[i], accessors);
                 output[i] = result;
             }
             return output;
