@@ -45,9 +45,9 @@ namespace Neutrino
 
             var meshes = ExtractMeshes(model, accessors);
 
-            AllocatePartitions(request, meshes, accessors, bufferViews);
+            var meshLocations = AllocateMeshes(request, meshes, accessors, bufferViews);
 
-            ProcessNodes(model, cameras);
+            var nodes = ExtractNodes(model, cameras);
         }
 
         class GltfPrimitiveStorageLocation
@@ -63,10 +63,13 @@ namespace Neutrino
             public uint LengthInBytes { get; set; }
             public ulong SrcOffset { get; set; }
             public ulong DstStride { get; set; }
+            public int BufferIndex { get; internal set; }
+            public object ByteStride { get; internal set; }
         }
 
-        private void AllocatePartitions(MgStorageBlockAllocationRequest request, GltfMesh[] meshes, GltfAccessor[] accessors, GltfBufferView[] bufferViews)
+        private GltfPrimitiveStorageLocation[] AllocateMeshes(MgStorageBlockAllocationRequest request, GltfMesh[] meshes, GltfAccessor[] accessors, GltfBufferView[] bufferViews)
         {
+            var locations = new List<GltfPrimitiveStorageLocation>();
             foreach(var mesh in meshes)
             {
                 foreach (var primitive in mesh.Primitives)
@@ -142,8 +145,10 @@ namespace Neutrino
                     }
 
                     finalLocation.CopyOperations = copyOps.ToArray();
+                    locations.Add(finalLocation);
                 }                
             }
+            return locations.ToArray();
         }
 
         private static InterleavedOperation CreateCopyOp(List<InterleavedOperation> destination, GltfAccessor selected, GltfBufferView[] bufferViews)
@@ -155,10 +160,16 @@ namespace Neutrino
 
             var op = new InterleavedOperation
             {
+                BufferIndex = view.BufferIndex,                
                 Count = selected.ElementCount,
                 SrcOffset = (ulong)(view.BufferOffset + selected.ViewOffset),
                 LengthInBytes = selected.NoOfComponents * selected.ElementByteSize,
             };
+
+            op.ByteStride =
+                (view.ByteStride.HasValue)
+                ? (uint) view.ByteStride.Value
+                : op.LengthInBytes;                    
 
             destination.Add(op);
             return op;
@@ -202,7 +213,7 @@ namespace Neutrino
         }
 
 
-        private void ProcessNodes(Gltf model, GltfBucketContainer cameras)
+        private GtlfRenderNode[] ExtractNodes(Gltf model, GltfBucketContainer cameras)
         {
             var noOfNodes = model.Nodes != null ? model.Nodes.Length : 0;
             var allNodes = new GtlfRenderNode[noOfNodes];
@@ -217,7 +228,8 @@ namespace Neutrino
                 destNode.CameraAllocation = cameras.GetAllocation(srcNode.Camera);
                 destNode.Children = srcNode.Children != null ? srcNode.Children : new int[] { };
                 destNode.Transform = GenerateTransform(srcNode);
-                destNode.IsMirrored = destNode.Transform.Determinant < 0;             
+                destNode.IsMirrored = destNode.Transform.Determinant < 0;
+                destNode.Mesh = srcNode.Mesh;
 
                 // TODO: meshes
 
@@ -225,6 +237,7 @@ namespace Neutrino
             }
 
             LinkToParents(allNodes);
+            return allNodes;
         }
 
         public static TkMatrix4 GenerateTransform(Node srcNode)

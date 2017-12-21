@@ -9,5 +9,6 @@
         public bool IsMirrored { get; internal set; }
         public int NodeIndex { get; internal set; }
         public string Name { get; internal set; }
+        public int? Mesh { get; internal set; }
     }
 }
