@@ -5,9 +5,71 @@ using Magnesium.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace Neutrino
 {
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PerInstance
+    {
+        public TkVector3 Position { get; set; }
+        public TkVector3 Scale { get; set; }
+        public TkVector4 Rotation { get; set; }
+        public uint CameraIndex { get; set; }
+        public uint MaterialIndex { get; set; }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Color3f
+    {
+        public float R { get; set; }
+        public float G { get; set; }
+        public float B { get; set; }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MaterialUBO
+    {
+        // 0 : baseColorTexture
+        // 1 : metallicRoughnessTexture	
+        // 2:  normalTexture
+        // 3:  occlusionTexture
+        // 4:  emissiveTexture
+
+        // 0
+        public MgVec4f BaseColorFactor { get; set; }
+
+        // 4 
+        public ushort BaseTexture { get; set; }
+        public ushort BaseTextureTexCoords { get; set; }
+
+        public ushort MetalicRoughnessTexture { get; set; }
+        public ushort MetalicRoughnessTexCoords { get; set; }
+
+        public ushort NormalTexture { get; set; }
+        public ushort NormalTexCoords { get; set; }
+
+        public ushort EmissiveTexture { get; set; }
+        public ushort EmissiveTexCoords { get; set; }
+
+        // 8
+        public ushort OcclusionTexture { get; set; }
+        public ushort OcclusionTexCoords { get; set; }
+
+        public float MetallicFactor { get; set; }
+        public float RoughnessFactor { get; set; }
+        public float NormalScale { get; set; }
+
+        // 12
+        public Color3f EmissiveFactor { get; set; }
+        public float OcclusionStrength { get; set; }
+
+        // 16
+        public float AlphaCutoff { get; set; }
+        public float A { get; set; }
+        public float B { get; set; }
+        public float C { get; set; }
+    }
 
     public class GltfSceneLoader : IGltfSceneLoader
     {
@@ -30,20 +92,29 @@ namespace Neutrino
 
             var request = new MgStorageBlockAllocationRequest();
 
-            var cameraAllocationInfo = new GltfBucketAllocationInfo<Camera, CameraUBO>
+            var cameraAllocationInfo = new GltfBucketAllocationInfo<CameraUBO>
             {
                 BucketSize = 16,
                 Usage = MgBufferUsageFlagBits.UNIFORM_BUFFER_BIT,
                 MemoryPropertyFlags = MgMemoryPropertyFlagBits.HOST_VISIBLE_BIT,
             };            
 
-            var cameras = cameraAllocationInfo.Extract(model.Cameras, request);
+            var cameras = cameraAllocationInfo.Extract(model.Cameras != null ? model.Cameras.Length : 0, request);
 
             var accessors = ExtractAccessors(model);
 
             var bufferViews = ExtractBufferViews(model);
 
-            var meshes = ExtractMeshes(model, accessors);
+            var materialAllocationInfo = new GltfBucketAllocationInfo<MaterialUBO>
+            {
+                BucketSize = 16,
+                Usage = MgBufferUsageFlagBits.UNIFORM_BUFFER_BIT,
+                MemoryPropertyFlags = MgMemoryPropertyFlagBits.HOST_VISIBLE_BIT,
+            };
+
+            var materials = materialAllocationInfo.Extract(model.Materials != null ? model.Materials.Length : 0, request);
+
+            var meshes = ExtractMeshes(model, accessors, materials);
 
             var meshLocations = AllocateMeshes(request, meshes, accessors, bufferViews);
 
@@ -175,14 +246,14 @@ namespace Neutrino
             return op;
         }
 
-        private GltfMesh[] ExtractMeshes(Gltf model, GltfAccessor[] accessors)
+        private GltfMesh[] ExtractMeshes(Gltf model, GltfAccessor[] accessors, GltfBucketContainer materials)
         {
             var noOfItems = model.Meshes != null ? model.Meshes.Length : 0;
             var output = new GltfMesh[noOfItems];
 
             for (var i = 0; i < noOfItems; i += 1)
             {
-                var result = new GltfMesh(model.Meshes[i], accessors);
+                var result = new GltfMesh(model.Meshes[i], accessors, materials);
                 output[i] = result;
             }
             return output;
@@ -226,7 +297,7 @@ namespace Neutrino
                 destNode.Name = srcNode.Name;
                 destNode.NodeIndex = i;
                 destNode.CameraAllocation = cameras.GetAllocation(srcNode.Camera);
-                destNode.Children = srcNode.Children != null ? srcNode.Children : new int[] { };
+                destNode.Children = srcNode.Children ?? (new int[] { });
                 destNode.Transform = GenerateTransform(srcNode);
                 destNode.IsMirrored = destNode.Transform.Determinant < 0;
                 destNode.Mesh = srcNode.Mesh;

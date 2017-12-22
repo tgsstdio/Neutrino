@@ -10,16 +10,17 @@ namespace Neutrino
         public float[] Weights { get; }
         public GltfMeshPrimitive[] Primitives { get; private set; }
 
-        public GltfMesh(Mesh mesh, GltfAccessor[] accessors)
+        public GltfMesh(Mesh mesh, GltfAccessor[] accessors, GltfBucketContainer materials)
         {
             Name = mesh.Name;
             Weights = mesh.Weights;
-            Primitives = InitializePrimitives(mesh, accessors);
+            Primitives = InitializePrimitives(mesh, accessors, materials);
         }
 
         private static GltfMeshPrimitive[] InitializePrimitives(
             Mesh mesh, 
-            GltfAccessor[] accessors)
+            GltfAccessor[] accessors,
+            GltfBucketContainer materials)
         {
             var noOfItems = mesh.Primitives != null ? mesh.Primitives.Length : 0;
             var output = new GltfMeshPrimitive[noOfItems];
@@ -35,13 +36,18 @@ namespace Neutrino
                     vertexLocations,
                     accessors);
 
-                output[i] = new GltfMeshPrimitive
+                var temp = new GltfMeshPrimitive
                 {
                     Topology = DetermineTopology(srcPrimitive.Mode),
-                    Material = srcPrimitive.Material,
                     VertexLocations = vertexLocations,
                     Definition = PerVertexDefinitionEncoder.Encode(definition),
+                    Material = materials.GetAllocation(srcPrimitive.Material),
                 };
+
+
+                
+
+                output[i] = temp;
             }
 
             return output;
