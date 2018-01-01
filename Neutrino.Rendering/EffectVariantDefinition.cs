@@ -4,6 +4,7 @@ namespace Neutrino
 {
     class EffectVariantEncoder
     {
+        public static uint Encode(EffectVariantOptions def)
         {
             uint finalPosition = (uint)def.FrontFace;
             finalPosition |= ((uint) def.CullMode) << 1;
@@ -11,11 +12,13 @@ namespace Neutrino
             return finalPosition;
         }
 
+        public static EffectVariantOptions Decode(uint code)
         {
             const uint THREE_BITS = 7U;
             const uint TWO_BITS = 3U;
             const uint FOUR_BITS = 15U;
 
+            return new EffectVariantOptions
             {
                 FrontFace = (MgFrontFace)(code & 1U),
                 CullMode = (MgCullModeFlagBits)((code >> 1) & TWO_BITS),
@@ -24,6 +27,7 @@ namespace Neutrino
         }
     }
 
+    public struct EffectVariantOptions
     {
         // [0, 1 bit]
         public MgFrontFace FrontFace { get; set; }

@@ -2,10 +2,9 @@
 
 namespace Neutrino
 {
-    class EffectVariant
+    public class EffectVariant
     {
         public IMgPipeline Pipeline { get; set; }
-        public uint Definition { get; set; }
-        public uint Options { get; set; }
+        public EffectVariantKey Key { get; set; }
     }
 }

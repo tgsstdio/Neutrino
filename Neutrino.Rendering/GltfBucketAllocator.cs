@@ -25,7 +25,9 @@ namespace Neutrino
                 SlotIndex = source.HasValue
                     ? Slots[source.Value + 1 / BucketSize]
                     : Slots[0],
-                Offset = (source.Value + 1) % BucketSize,
+                Offset = source.HasValue
+                    ? (source.Value + 1) % BucketSize
+                    : 0,
             };
         }
     }

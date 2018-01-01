@@ -5,71 +5,9 @@ using Magnesium.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
 
 namespace Neutrino
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public struct PerInstance
-    {
-        public TkVector3 Position { get; set; }
-        public TkVector3 Scale { get; set; }
-        public TkVector4 Rotation { get; set; }
-        public uint CameraIndex { get; set; }
-        public uint MaterialIndex { get; set; }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct Color3f
-    {
-        public float R { get; set; }
-        public float G { get; set; }
-        public float B { get; set; }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct MaterialUBO
-    {
-        // 0 : baseColorTexture
-        // 1 : metallicRoughnessTexture	
-        // 2:  normalTexture
-        // 3:  occlusionTexture
-        // 4:  emissiveTexture
-
-        // 0
-        public MgVec4f BaseColorFactor { get; set; }
-
-        // 4 
-        public ushort BaseTexture { get; set; }
-        public ushort BaseTextureTexCoords { get; set; }
-
-        public ushort MetalicRoughnessTexture { get; set; }
-        public ushort MetalicRoughnessTexCoords { get; set; }
-
-        public ushort NormalTexture { get; set; }
-        public ushort NormalTexCoords { get; set; }
-
-        public ushort EmissiveTexture { get; set; }
-        public ushort EmissiveTexCoords { get; set; }
-
-        // 8
-        public ushort OcclusionTexture { get; set; }
-        public ushort OcclusionTexCoords { get; set; }
-
-        public float MetallicFactor { get; set; }
-        public float RoughnessFactor { get; set; }
-        public float NormalScale { get; set; }
-
-        // 12
-        public Color3f EmissiveFactor { get; set; }
-        public float OcclusionStrength { get; set; }
-
-        // 16
-        public float AlphaCutoff { get; set; }
-        public float A { get; set; }
-        public float B { get; set; }
-        public float C { get; set; }
-    }
 
     public class GltfSceneLoader : IGltfSceneLoader
     {
@@ -115,27 +53,80 @@ namespace Neutrino
             var materials = materialAllocationInfo.Extract(model.Materials != null ? model.Materials.Length : 0, request);
 
             var meshes = ExtractMeshes(model, accessors, materials);
+            PadMeshes(meshes);
 
             var meshLocations = AllocateMeshes(request, meshes, accessors, bufferViews);
+
+
 
             var nodes = ExtractNodes(model, cameras);
         }
 
-        class GltfPrimitiveStorageLocation
+        PerVertexDefinition DEFAULT_PADDING = new PerVertexDefinition
         {
-            public int? Index { get; set; }
-            public int Vertex { get; set; }
-            public InterleavedOperation[] CopyOperations { get; internal set; }
-        }
+            Position = PerVertexPositionType.Float3,
+            Normal = PerVertexNormalType.Float3,
+            Tangent = PerVertexTangentType.Float4,
+            TexCoords0 = PerVertexTexCoordsType.Float2,
+            TexCoords1 = PerVertexTexCoordsType.Float2,
+            Color0 = PerVertexColorType.FloatRGBA,
+            Color1 = PerVertexColorType.FloatRGBA,
+            Joints0 = PerVertexJointType.Byte4,
+            Joints1 = PerVertexJointType.Byte4,
+            Weights0 = PerVertexWeightsType.Float4,
+            Weights1 = PerVertexWeightsType.Float4,
+        };
 
-        class InterleavedOperation
+        private void PadMeshes(GltfMesh[] meshes)
         {
-            public int Count { get; set; }
-            public uint LengthInBytes { get; set; }
-            public ulong SrcOffset { get; set; }
-            public ulong DstStride { get; set; }
-            public int BufferIndex { get; internal set; }
-            public object ByteStride { get; internal set; }
+            var noOfMeshes = meshes.Length;
+            for (var i = 0; i < noOfMeshes; i += 1)
+            {
+                var currentMesh = meshes[i];
+
+                foreach (var primitive in currentMesh.Primitives)
+                {
+                    var modelDefinition = primitive.InitialDefinition;
+                    primitive.FinalDefinition = new PerVertexDefinition {
+                        Position =
+                            (modelDefinition.Position == PerVertexPositionType.None)
+                            ? DEFAULT_PADDING.Position
+                            : modelDefinition.Position,
+                        Normal =
+                            (modelDefinition.Normal == PerVertexNormalType.None)
+                            ? DEFAULT_PADDING.Normal
+                            : modelDefinition.Normal,
+                        Tangent =
+                            (modelDefinition.Tangent == PerVertexTangentType.None)
+                            ? DEFAULT_PADDING.Tangent
+                            : modelDefinition.Tangent,
+                        TexCoords0 = (modelDefinition.TexCoords0 == PerVertexTexCoordsType.None)
+                            ? DEFAULT_PADDING.TexCoords0
+                            : modelDefinition.TexCoords0,
+                        TexCoords1 = (modelDefinition.TexCoords1 == PerVertexTexCoordsType.None)
+                            ? DEFAULT_PADDING.TexCoords1
+                            : modelDefinition.TexCoords1,
+                        Color0 = (modelDefinition.Color0 == PerVertexColorType.None)
+                            ? DEFAULT_PADDING.Color0
+                            : modelDefinition.Color0,
+                        Color1 = (modelDefinition.Color1 == PerVertexColorType.None)
+                            ? DEFAULT_PADDING.Color1
+                            : modelDefinition.Color1,
+                        Joints0 = (modelDefinition.Joints0 == PerVertexJointType.None)
+                            ? DEFAULT_PADDING.Joints0
+                            : modelDefinition.Joints0,
+                        Joints1 = (modelDefinition.Joints1 == PerVertexJointType.None)
+                            ? DEFAULT_PADDING.Joints1
+                            : modelDefinition.Joints1,
+                        Weights0 = (modelDefinition.Weights0 == PerVertexWeightsType.None)
+                            ? DEFAULT_PADDING.Weights0
+                            : modelDefinition.Weights0,
+                        Weights1 = (modelDefinition.Weights1 == PerVertexWeightsType.None)
+                            ? DEFAULT_PADDING.Weights1
+                            : modelDefinition.Weights1,
+                    };
+                }
+            }
         }
 
         private GltfPrimitiveStorageLocation[] AllocateMeshes(MgStorageBlockAllocationRequest request, GltfMesh[] meshes, GltfAccessor[] accessors, GltfBufferView[] bufferViews)
@@ -149,98 +140,115 @@ namespace Neutrino
 
                     var finalLocation = new GltfPrimitiveStorageLocation { };
 
-                    var totalSize = 0UL;
-                    var vertexFields = new int?[]
-                    {
-                        locator.Position,
-                        locator.Normal,
-                        locator.Tangent,
-                        locator.TexCoords0,
-                        locator.TexCoords1,
-                        locator.Color0,
-                        locator.Color1,
-                        locator.Joints0,
-                        locator.Joints1,
-                        locator.Weights0,
-                        locator.Weights1,
-                    };
-
-                    var copyOps = new List<InterleavedOperation>();
-
-                    var totalElementSize = 0U;
-                    foreach(var field in vertexFields)
-                    {
-                        if (field.HasValue)
-                        {
-                            var selected = accessors[field.Value];
-                            var op = CreateCopyOp(copyOps, selected, bufferViews);
-                            totalElementSize += op.LengthInBytes;
-                            totalSize += selected.TotalByteSize;
-                        }
-                        else
-                        {
-                            throw new InvalidOperationException("Position required");
-                        }
-                    }
-
-                    foreach(var op in copyOps)
-                    {
-                        op.DstStride = totalElementSize;
-                    }
-
-                    var vertexInfo = new MgStorageBlockAllocationInfo
-                    {
-                        MemoryPropertyFlags = MgMemoryPropertyFlagBits.HOST_COHERENT_BIT,
-                        Usage = MgBufferUsageFlagBits.VERTEX_BUFFER_BIT,
-                        ElementByteSize = totalElementSize,
-                        Size = totalSize,
-                    };
-
-                    finalLocation.Vertex = request.Insert(vertexInfo);
-
-                    if (locator.Indices.HasValue)
-                    {
-                        var selected = accessors[locator.Indices.Value];
-                        var op = CreateCopyOp(copyOps, selected, bufferViews);
-                        op.DstStride = selected.ElementByteSize;
-
-                        var indexInfo = new MgStorageBlockAllocationInfo
-                        {
-                            MemoryPropertyFlags = MgMemoryPropertyFlagBits.HOST_COHERENT_BIT,
-                            Usage = MgBufferUsageFlagBits.INDEX_BUFFER_BIT,     
-                            Size = selected.TotalByteSize,
-                            ElementByteSize = selected.ElementByteSize,
-                        };
-
-                        finalLocation.Index = request.Insert(indexInfo);
-                    }
-
-                    finalLocation.CopyOperations = copyOps.ToArray();
+                    finalLocation.CopyOperations = GenerateCopyOps(request, accessors, bufferViews, locator, finalLocation);
                     locations.Add(finalLocation);
-                }                
+                }
             }
             return locations.ToArray();
         }
 
-        private static InterleavedOperation CreateCopyOp(List<InterleavedOperation> destination, GltfAccessor selected, GltfBufferView[] bufferViews)
+        private static GltfInterleavedOperation[] GenerateCopyOps(MgStorageBlockAllocationRequest request, GltfAccessor[] accessors, GltfBufferView[] bufferViews, IPerVertexDataLocator locator, GltfPrimitiveStorageLocation finalLocation)
+        {
+            var totalSize = 0UL;
+            var vertexFields = new int?[]
+            {
+                locator.Position,
+                locator.Normal,
+                locator.Tangent,
+                locator.TexCoords0,
+                locator.TexCoords1,
+                locator.Color0,
+                locator.Color1,
+                locator.Joints0,
+                locator.Joints1,
+                locator.Weights0,
+                locator.Weights1,
+            };
+
+            var paddingByteStride = new uint[]
+            {
+
+            };
+
+            var paddingTotalByteStride = new uint[]
+            {
+
+            };
+
+            var copyOps = new List<GltfInterleavedOperation>();
+
+            var vertexBufferStride = 0U;
+            for (var i =0; i < vertexFields.Length; i += 1)
+            {
+                var field = vertexFields[i];
+                if (field.HasValue)
+                {
+                    var selected = accessors[field.Value];
+                    var op = CreateCopyOp(copyOps, selected, bufferViews);
+                    vertexBufferStride += op.ByteStride;
+                    totalSize += selected.TotalByteSize;
+                }
+                else
+                {
+                    vertexBufferStride += paddingByteStride[i];
+                    totalSize += paddingTotalByteStride[i];
+                }
+            }
+
+            foreach (var op in copyOps)
+            {
+                op.DstStride = vertexBufferStride;
+            }
+
+            var vertexInfo = new MgStorageBlockAllocationInfo
+            {
+                MemoryPropertyFlags = MgMemoryPropertyFlagBits.HOST_COHERENT_BIT,
+                Usage = MgBufferUsageFlagBits.VERTEX_BUFFER_BIT,
+                ElementByteSize = vertexBufferStride,
+                Size = totalSize,
+            };
+
+            finalLocation.Vertex = request.Insert(vertexInfo);
+
+            if (locator.Indices.HasValue)
+            {
+                var selected = accessors[locator.Indices.Value];
+                var op = CreateCopyOp(copyOps, selected, bufferViews);
+                op.DstStride = selected.ElementByteSize;
+
+                var indexInfo = new MgStorageBlockAllocationInfo
+                {
+                    MemoryPropertyFlags = MgMemoryPropertyFlagBits.HOST_COHERENT_BIT,
+                    Usage = MgBufferUsageFlagBits.INDEX_BUFFER_BIT,
+                    Size = selected.TotalByteSize,
+                    ElementByteSize = selected.ElementByteSize,
+                };
+
+                finalLocation.Index = request.Insert(indexInfo);
+            }
+
+            return copyOps.ToArray();
+        }
+
+        private static GltfInterleavedOperation CreateCopyOp(List<GltfInterleavedOperation> destination, GltfAccessor selected, GltfBufferView[] bufferViews)
         {
             if (!selected.BufferView.HasValue)
                 throw new InvalidOperationException("unable to locate bufferview");
 
             var view = bufferViews[selected.BufferView.Value];
 
-            var op = new InterleavedOperation
+            var op = new GltfInterleavedOperation
             {
                 BufferIndex = view.BufferIndex,                
                 Count = selected.ElementCount,
                 SrcOffset = (ulong)(view.BufferOffset + selected.ViewOffset),
-                LengthInBytes = selected.NoOfComponents * selected.ElementByteSize,
+                TotalSize = (uint) (selected.ElementCount * selected.NoOfComponents * selected.ElementByteSize),
             };
 
             op.ByteStride =
                 (view.ByteStride.HasValue)
                 ? (uint) view.ByteStride.Value
-                : op.LengthInBytes;                    
+                : selected.NoOfComponents * selected.ElementByteSize;                    
 
             destination.Add(op);
             return op;

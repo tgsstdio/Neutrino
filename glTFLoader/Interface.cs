@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.Remoting.Messaging;
+// using System.Runtime.Remoting.Messaging;
 using System.Text;
 using glTFLoader.Schema;
 using Newtonsoft.Json;
@@ -15,7 +15,7 @@ namespace glTFLoader
         public static Gltf LoadModel(string filePath)
         {
             var path = Path.GetFullPath(filePath);
-            CallContext.LogicalSetData("UriRootPath", Path.GetDirectoryName(path));
+           // CallContext.LogicalSetData("UriRootPath", Path.GetDirectoryName(path));
             using (var fs = File.Open(path, FileMode.Open))
             {
                 return LoadModel(fs);

@@ -7,15 +7,33 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Magnesium" Version="7.0.0-alpha" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="1.2.0" />
     <PackageReference Include="MSTest.TestFramework" Version="1.2.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\glTFLoader\glTFLoader.csproj" />
     <ProjectReference Include="..\glTFLoader_Shared\glTFLoader_Shared.csproj" />
-    <ProjectReference Include="..\Neutrino.Rendering\Neutrino.csproj" />
+    <ProjectReference Include="..\Neutrino.Rendering\Neutrino.Library.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Data\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Data\Triangle.gltf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\triangleWithoutIndices.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\TriangleWithoutIndices.gltf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

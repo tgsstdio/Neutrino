@@ -40,12 +40,13 @@ namespace Neutrino
                 {
                     Topology = DetermineTopology(srcPrimitive.Mode),
                     VertexLocations = vertexLocations,
-                    Definition = PerVertexDefinitionEncoder.Encode(definition),
+                    InitialDefinition = definition,
                     Material = materials.GetAllocation(srcPrimitive.Material),
-                };
-
-
-                
+                    VertexCount =
+                        vertexLocations.Position.HasValue
+                        ? (uint) accessors[vertexLocations.Position.Value].ElementCount
+                        : 0U
+                };                               
 
                 output[i] = temp;
             }

@@ -1,28 +1,34 @@
-﻿using System.Collections.Generic;
+﻿using Magnesium;
+using System.Collections.Generic;
 
-namespace MonoGame.Graphics
+namespace Neutrino
 {
-	public class EffectPipelineDictionary : IEffectPipelineCollection
+	public class EffectPipelineDictionary
 	{
-		private readonly Dictionary<ushort, EffectPipeline> mEntries;
+		private readonly Dictionary<EffectVariantKey, EffectVariant> mVariants;
 		public EffectPipelineDictionary ()
 		{
-			mEntries = new Dictionary<ushort, EffectPipeline> ();
+			mVariants = new Dictionary<EffectVariantKey, EffectVariant> ();
 		}
 
-		public void Add(ushort key, EffectPipeline item)
+		public void Add(EffectVariantKey key, EffectVariant item)
 		{
-			mEntries.Add (key, item);
+			mVariants.Add (key, item);
 		}
 
-		#region IEffectVariantCollection implementation
-
-		public bool TryGetValue (ushort options, out EffectPipeline result)
+		public bool TryGetValue (EffectVariantKey key, out EffectVariant result)
 		{
-			return mEntries.TryGetValue (options, out result);
+			return mVariants.TryGetValue (key, out result);
 		}
 
-		#endregion
+        public void Clear(IMgDevice device)
+        {
+            foreach(var entry in mVariants.Values)
+            {
+                entry.Pipeline.DestroyPipeline(device, null);
+            }
+            mVariants.Clear();
+        }
 	}
 }
 
