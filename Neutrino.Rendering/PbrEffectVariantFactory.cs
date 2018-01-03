@@ -15,7 +15,7 @@ namespace Neutrino
         public EffectVariant Initialize(
             IMgDevice device,
             IMgPipelineLayout layout,
-            IMgEffectFramework framework,
+            IMgRenderPass renderPass,
             PerVertexInputPipelineState vertexInput,            
             EffectVariantOptions options
         )
@@ -114,7 +114,7 @@ namespace Neutrino
                         DepthBiasEnable = false,
                         LineWidth = 1.0f,
                     },
-                    RenderPass = framework.Renderpass,
+                    RenderPass = renderPass,
                     VertexInputState = vertexInput.VertexInputState,
                     ViewportState = null,
                 };

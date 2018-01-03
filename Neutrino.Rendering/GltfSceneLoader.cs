@@ -5,23 +5,27 @@ using Magnesium.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace Neutrino
 {
-
     public class GltfSceneLoader : IGltfSceneLoader
     {
         private readonly IMgGraphicsConfiguration mConfiguration;
         private readonly MgOptimizedStorageBuilder mBuilder;
+        private readonly IPbrEffectPath mPbrEffectPath;
+
         public GltfSceneLoader(
             IMgGraphicsConfiguration config,
-            MgOptimizedStorageBuilder builder
+            MgOptimizedStorageBuilder builder,
+            IPbrEffectPath pbrEffectPath
         ) {
             mConfiguration = config;
             mBuilder = builder;
+            mPbrEffectPath = pbrEffectPath;
         }
 
-        public void Load(string modelFilePath)
+        public void Load(IMgDevice device, IMgEffectFramework framework, string modelFilePath)
         {
             var model = Interface.LoadModel(modelFilePath);
             var baseDir = Path.GetDirectoryName(modelFilePath);
@@ -30,36 +34,387 @@ namespace Neutrino
 
             var request = new MgStorageBlockAllocationRequest();
 
+            const int MAX_NO_OF_CAMERAS = 1;
             var cameraAllocationInfo = new GltfBucketAllocationInfo<CameraUBO>
             {
-                BucketSize = 16,
+                BucketSize = MAX_NO_OF_CAMERAS,
                 Usage = MgBufferUsageFlagBits.UNIFORM_BUFFER_BIT,
                 MemoryPropertyFlags = MgMemoryPropertyFlagBits.HOST_VISIBLE_BIT,
             };            
 
-            var cameras = cameraAllocationInfo.Extract(model.Cameras != null ? model.Cameras.Length : 0, request);
+            var cameraSlots = cameraAllocationInfo.Prepare(model.Cameras != null ? model.Cameras.Length : 0, request);
 
             var accessors = ExtractAccessors(model);
 
             var bufferViews = ExtractBufferViews(model);
 
+            const int MAX_NO_OF_MATERIALS = 16;
+
             var materialAllocationInfo = new GltfBucketAllocationInfo<MaterialUBO>
             {
-                BucketSize = 16,
+                BucketSize = MAX_NO_OF_MATERIALS,
                 Usage = MgBufferUsageFlagBits.UNIFORM_BUFFER_BIT,
                 MemoryPropertyFlags = MgMemoryPropertyFlagBits.HOST_VISIBLE_BIT,
             };
 
-            var materials = materialAllocationInfo.Extract(model.Materials != null ? model.Materials.Length : 0, request);
+            var images = ExtractImages(baseDir, model.Images, bufferViews, buffers);
 
-            var meshes = ExtractMeshes(model, accessors, materials);
+            var materialSlots = materialAllocationInfo.Prepare(model.Materials != null ? model.Materials.Length : 0, request);
+
+            var materialChunks = ExtractMaterials(materialSlots.BucketSize, model.Materials);
+
+            var meshes = ExtractMeshes(model, accessors, materialSlots);
             PadMeshes(meshes);
 
             var meshLocations = AllocateMeshes(request, meshes, accessors, bufferViews);
 
+            var nodes = ExtractNodes(model, cameraSlots);
+
+            var pDsCreateInfo = new MgDescriptorSetLayoutCreateInfo
+            {
+                Bindings = new []
+                {
+                    // CAMERA
+                    new MgDescriptorSetLayoutBinding
+                    {
+                        Binding = 0,
+                        DescriptorType = MgDescriptorType.UNIFORM_BUFFER,
+                        DescriptorCount = MAX_NO_OF_CAMERAS,
+                        StageFlags = MgShaderStageFlagBits.VERTEX_BIT,
+                    },
+                    // MATERIALS
+                    new MgDescriptorSetLayoutBinding
+                    {
+                        Binding = 1,
+                        DescriptorType = MgDescriptorType.UNIFORM_BUFFER,
+                        DescriptorCount = MAX_NO_OF_MATERIALS,
+                        StageFlags = MgShaderStageFlagBits.FRAGMENT_BIT,
+                    },
+                    // TEXTURES
+                    new MgDescriptorSetLayoutBinding
+                    {
+                        Binding = 2,
+                        DescriptorType = MgDescriptorType.COMBINED_IMAGE_SAMPLER,
+                        DescriptorCount = 16,
+                        StageFlags = MgShaderStageFlagBits.FRAGMENT_BIT,
+                    },
+                }
+            };
+
+            var err = device.CreateDescriptorSetLayout(pDsCreateInfo, null, out IMgDescriptorSetLayout dsLayout);
+            if (err != Result.SUCCESS)
+                throw new InvalidOperationException("CreatePipelineLayout failed");
+
+            var pCreateInfo = new MgPipelineLayoutCreateInfo
+            {                
+                SetLayouts = new []
+                {
+                    dsLayout, 
+                }
+            };
+
+            err = device.CreatePipelineLayout(pCreateInfo, null, out IMgPipelineLayout layout);
+            if (err != Result.SUCCESS)
+                throw new InvalidOperationException("CreatePipelineLayout failed");
+
+            var pbrEffect = new EffectPipelineDictionary();
+            var pbrFactory = new PbrEffectVariantFactory(mPbrEffectPath);
+
+            var instanceDrawGroups = new Dictionary<GltfInstancedGroupKey, GltfInstanceDrawGroup>();
+            foreach(var node in nodes)
+            {
+                if (node.Mesh.HasValue)
+                {
+                    var options = new EffectVariantOptions
+                    {
+
+                    };
+
+                    var meshIndex = node.Mesh.Value;
+                    var mesh = meshes[meshIndex];
+
+                    options.FrontFace =
+                        node.IsMirrored
+                        ? MgFrontFace.CLOCKWISE
+                        : MgFrontFace.COUNTER_CLOCKWISE;
+
+                    foreach (var primitive in mesh.Primitives)
+                    {
+                        options.Topology = primitive.Topology;
+
+                        var materialItem = materialChunks[primitive.Material.BucketIndex].Items[primitive.Material.Offset];
+
+                        options.CullMode =
+                            materialItem.DoubleSided
+                            ? MgCullModeFlagBits.NONE
+                            : MgCullModeFlagBits.BACK_BIT;
+
+                        var key = new EffectVariantKey
+                        {
+                            Definition = PerVertexDefinitionEncoder.Encode(primitive.FinalDefinition),
+                            Options = EffectVariantEncoder.Encode(options),
+                        };                      
+
+                        if (!pbrEffect.TryGetValue(key, out EffectVariant found))
+                        {
+                            var vertexInput = new PerVertexInputPipelineState(primitive.FinalDefinition);
+                            found = pbrFactory.Initialize(device, layout, framework.Renderpass, vertexInput, options);
+
+                            pbrEffect.Add(key, found);
+                        }
+
+                        var groupKey = new GltfInstancedGroupKey
+                        {
+                            MeshIndex = meshIndex,
+                            CameraSlotIndex = 0,
+                            TextureSlotIndex = 0,
+                            MaterialSlotIndex = primitive.Material.StorageIndex,
+
+                            VariantKey = key,
+                        };
+
+                        if (!instanceDrawGroups.TryGetValue(groupKey, out GltfInstanceDrawGroup drawGroup))
+                        {
+                            drawGroup = new GltfInstanceDrawGroup
+                            {
+                                GroupKey = groupKey,
+                                Variant = found,                                
+                                Members = new List<GltfInstancedDraw>(),
+                            };
+
+                            instanceDrawGroups.Add(groupKey, drawGroup);
+                        }
+
+                        var instancedDraw = new GltfInstancedDraw
+                        {
+                            Key = key,
+                            GroupKey = groupKey,
+                            Instance = new PerInstance
+                            {
+                                Position = node.Transform.ExtractTranslation(),
+                                Scale = node.Transform.ExtractScale(),
+                                Rotation = new TkVector4(1, 1, 1, 1), // TODO 
+                                MaterialIndex = (uint)primitive.Material.Offset,
+                            },
+                        };
+
+                        drawGroup.Members.Add(instancedDraw);
+                    }
+                }
+            }
+
+            var stride = Marshal.SizeOf(typeof(PerInstance));
+
+            var perInstances = new List<GltfInstanceRenderGroup>();
+            foreach (var group in instanceDrawGroups.Values)
+            {
+                var slotInfo = new MgStorageBlockAllocationInfo
+                {
+                    MemoryPropertyFlags = MgMemoryPropertyFlagBits.HOST_VISIBLE_BIT,
+                    Usage = MgBufferUsageFlagBits.VERTEX_BUFFER_BIT,
+                    ElementByteSize = (uint) stride,
+                    Size = (ulong) (group.Members.Count * stride),
+                };
+
+                var instanceGroup = new GltfInstanceRenderGroup
+                {
+                    Variant = group.Variant,
+                    StorageIndex = request.Insert(slotInfo),
+                    Members = group.Members.ToArray(),
+                };
+                perInstances.Add(instanceGroup);
+            }
+        }
+
+        public class GltfInstanceDrawGroup
+        {
+            public GltfInstancedGroupKey GroupKey { get; set; }
+            public List<GltfInstancedDraw> Members { get; set; }
+            public EffectVariant Variant { get; internal set; }
+        }
+
+        public class GltfInstanceRenderGroup
+        {
+            public GltfInstancedGroupKey GroupKey { get; set; }
+            public EffectVariant Variant { get; internal set; }
+            public int StorageIndex { get; set; }
+            public GltfInstancedDraw[] Members { get; set; }
+        }
+
+        public class GltfTextureInfo
+        {
+
+        }
 
 
-            var nodes = ExtractNodes(model, cameras);
+
+        private GltfImageData[] ExtractImages(string baseDir, Image[] images, GltfBufferView[] bufferViews, List<byte[]> buffers)
+        {
+            var count = images != null ? images.Length : 0;
+
+            var output = new GltfImageData[count];
+
+            for (var i = 0; i < count; i += 1)
+            {
+                var currentImage = images[i];
+
+                byte[] src = null;
+                ulong srcOffset = 0;
+                ulong srcLength = 0UL;
+                string userDefMimeType = null;
+                if (currentImage.BufferView.HasValue)
+                {
+                    var view = bufferViews[currentImage.BufferView.Value];
+                    src = buffers[view.BufferIndex];
+                    srcOffset = (ulong)view.BufferOffset;
+                    srcLength = (ulong)view.ByteLength;
+                }
+                else if (!string.IsNullOrWhiteSpace(currentImage.Uri))
+                {
+                    if (DataURL.FromUri(currentImage.Uri, out DataURL urlData))
+                    {
+                        userDefMimeType = urlData.MediaType;
+                        src = urlData.Data;
+                        srcOffset = 0UL;
+                        srcLength = (ulong)urlData.Data.Length;
+                    }
+                    else
+                    {
+                        // OPEN FILE
+                        userDefMimeType = Path.GetExtension(currentImage.Uri).ToUpperInvariant();
+
+                        string additionalFilePath = System.IO.Path.Combine(baseDir, currentImage.Uri);
+                        using (var fs = File.Open(additionalFilePath, FileMode.Open))
+                        using (var ms = new MemoryStream())
+                        {
+                            fs.CopyTo(ms);
+                            src = ms.ToArray();
+                            srcOffset = 0UL;
+                            srcLength = (ulong)src.Length;
+                        }
+                    }
+                }
+
+                GltfImageMimeType mimeType =
+                    currentImage.MimeType.HasValue
+                    ? GetImageTypeFromJSON(currentImage.MimeType.Value)
+                    : GetImageTypeFromStr(userDefMimeType);
+
+                var temp = new GltfImageData
+                {
+                    Name = currentImage.Name,
+                    MimeType = mimeType,
+                    Source = src,
+                    SrcOffset = srcOffset,
+                    SrcLength = srcLength,
+                };
+
+                output[i] = temp;
+            }
+
+            return output;
+        }
+
+        private GltfImageMimeType GetImageTypeFromStr(string userDefMimeType)
+        {
+            switch(userDefMimeType)
+            {
+                case "":
+                default:
+                    throw new InvalidOperationException("image type invalid");                
+                case ".PNG":
+                case "image/png":
+                    return GltfImageMimeType.PNG;
+                case ".JPG":
+                case ".JPEG":
+                case "image/jpeg":
+                    return GltfImageMimeType.JPEG;
+            }
+        }
+
+        private static GltfImageMimeType GetImageTypeFromJSON(Image.MimeTypeEnum mimeType)
+        {
+            switch (mimeType)
+            {
+                case Image.MimeTypeEnum.image_jpeg:
+                    return GltfImageMimeType.JPEG;
+                case Image.MimeTypeEnum.image_png:
+                    return GltfImageMimeType.PNG;
+                default:
+                    throw new InvalidOperationException("image type invalid");
+            }
+        }
+
+        //public GltfTextureInfo[] ExtractTextures(uint bucketSize, Texture[] textures, Sampler[] samples, Image[] images)
+        //{
+        //    var count = textures != null ? textures.Length : 0;
+        //    var noOfBuckets = (count / bucketSize) + 1;
+
+        //    var chunks = new GltfTextureInfo[noOfBuckets];
+
+        //    for (var i = 0; i < count; i += 1)
+        //    {
+        //        var current = textures[i];
+
+        //        current.Source.
+
+        //        var info = new GltfTextureInfo
+        //        {
+                    
+        //        };
+
+        //        chunks[i] = info;
+        //    }
+
+        //    return chunks;
+        //}
+
+        private GltfMaterialChunk[] ExtractMaterials(int bucketSize, Material[] materials)
+        {
+            var noOfMaterials = materials != null ? materials.Length : 0;
+            var noOfBuckets = (noOfMaterials / bucketSize) + 1;
+
+            var chunks = new GltfMaterialChunk[noOfBuckets];
+   
+            for(var i =0; i < noOfBuckets; i += 1)
+            {
+                chunks[i] = new GltfMaterialChunk
+                {
+                    Items = new GltfMaterialCapsule[bucketSize],
+                };
+            }
+
+            // Default - chunk 0, slot 0
+            chunks[0].Items[0] = new GltfMaterialCapsule
+            {
+                DoubleSided = false,
+                UBO = new MaterialUBO
+                {
+                    BaseTexture = 0,
+                    BaseTextureTexCoords = 0,
+                    BaseColorFactor = new MgVec4f(1f, 1f, 1f, 1f),
+                    MetallicFactor = 1f,
+                    RoughnessFactor = 1f,
+
+                    NormalTexture = 0,
+                    NormalTexCoords = 0,
+                    NormalScale = 1f,
+
+                    OcclusionTexture = 0,
+                    OcclusionTexCoords = 0,
+                    OcclusionStrength = 1f,
+
+                    EmissiveFactor = new Color3f { R = 0f, G = 0f, B = 0f },
+                    AlphaCutoff = 0.5f,
+
+                    // OPAQUE
+                    A = 1.0f, //  A * vec4(fragColor.rgb, 1f))
+                    B = 0f, //  + B * vec4(step(alphacutoff, fragColor.a) * fragColor.rgb, 1f)
+                    C = 0f, //  + C * vec4(fragColor.rgb, fragColor.a)
+                }
+            };
+
+            return chunks;
         }
 
         PerVertexDefinition DEFAULT_PADDING = new PerVertexDefinition
@@ -140,14 +495,14 @@ namespace Neutrino
 
                     var finalLocation = new GltfPrimitiveStorageLocation { };
 
-                    finalLocation.CopyOperations = GenerateCopyOps(request, accessors, bufferViews, locator, finalLocation);
+                    finalLocation.CopyOperations = GenerateCopyOps(primitive.VertexCount, request, accessors, bufferViews, locator, finalLocation);
                     locations.Add(finalLocation);
                 }
             }
             return locations.ToArray();
         }
 
-        private static GltfInterleavedOperation[] GenerateCopyOps(MgStorageBlockAllocationRequest request, GltfAccessor[] accessors, GltfBufferView[] bufferViews, IPerVertexDataLocator locator, GltfPrimitiveStorageLocation finalLocation)
+        private static GltfInterleavedOperation[] GenerateCopyOps(uint vertexCount, MgStorageBlockAllocationRequest request, GltfAccessor[] accessors, GltfBufferView[] bufferViews, IPerVertexDataLocator locator, GltfPrimitiveStorageLocation finalLocation)
         {
             var totalSize = 0UL;
             var vertexFields = new int?[]
@@ -167,12 +522,17 @@ namespace Neutrino
 
             var paddingByteStride = new uint[]
             {
-
-            };
-
-            var paddingTotalByteStride = new uint[]
-            {
-
+                12U,
+                12U,
+                16U,
+                8U,
+                8U,
+                16U,
+                16U,
+                4U,
+                4U,
+                16U,
+                16U,
             };
 
             var copyOps = new List<GltfInterleavedOperation>();
@@ -191,7 +551,7 @@ namespace Neutrino
                 else
                 {
                     vertexBufferStride += paddingByteStride[i];
-                    totalSize += paddingTotalByteStride[i];
+                    totalSize += vertexCount * paddingByteStride[i];
                 }
             }
 
@@ -292,23 +652,25 @@ namespace Neutrino
         }
 
 
-        private GtlfRenderNode[] ExtractNodes(Gltf model, GltfBucketContainer cameras)
+        private GtlfNodeInfo[] ExtractNodes(Gltf model, GltfBucketContainer cameras)
         {
             var noOfNodes = model.Nodes != null ? model.Nodes.Length : 0;
-            var allNodes = new GtlfRenderNode[noOfNodes];
+            var allNodes = new GtlfNodeInfo[noOfNodes];
 
             for (var i = 0; i < noOfNodes; i += 1)
             {
                 var srcNode = model.Nodes[i];
-                var destNode = new GtlfRenderNode { };
+                var destNode = new GtlfNodeInfo
+                {
+                    Name = srcNode.Name,
+                    NodeIndex = i,
+                    CameraAllocation = cameras.GetAllocation(srcNode.Camera),
+                    Children = srcNode.Children ?? (new int[] { }),
+                    Transform = GenerateTransform(srcNode), 
+                    Mesh = srcNode.Mesh,
+                };
 
-                destNode.Name = srcNode.Name;
-                destNode.NodeIndex = i;
-                destNode.CameraAllocation = cameras.GetAllocation(srcNode.Camera);
-                destNode.Children = srcNode.Children ?? (new int[] { });
-                destNode.Transform = GenerateTransform(srcNode);
                 destNode.IsMirrored = destNode.Transform.Determinant < 0;
-                destNode.Mesh = srcNode.Mesh;
 
                 // TODO: meshes
 
@@ -352,7 +714,7 @@ namespace Neutrino
            }
         }
 
-        public static void LinkToParents(GtlfRenderNode[] allNodes)
+        public static void LinkToParents(GtlfNodeInfo[] allNodes)
         {
             foreach (var srcParentNode in allNodes)
             {

@@ -14,8 +14,15 @@ namespace Neutrino.UnitTests
             var partitioner = new Magnesium.Utilities.MgOptimizedStoragePartitioner(layout);
             var verifier = new Magnesium.Utilities.MgOptimizedStoragePartitionVerifier(config);
             var builder = new Magnesium.Utilities.MgOptimizedStorageBuilder(config, partitioner, verifier);
-            var loader = new GltfSceneLoader(config, builder);
-            loader.Load("Data/Triangle.gltf");
+            var pbrPath = new MockPbrEffectPath
+            {
+                FragPath = "Data/pbr.frag",
+                VertPath = "Data/pbr.vert"
+            };
+            var loader = new GltfSceneLoader(config, builder, pbrPath);
+            IMgDevice device = new MockDevice();
+            IMgEffectFramework framework = new MockEffectFramework();
+            loader.Load(device, framework, "Data/Triangle.gltf");
         }
     }
 }

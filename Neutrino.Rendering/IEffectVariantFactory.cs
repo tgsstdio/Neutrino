@@ -7,7 +7,7 @@ namespace Neutrino
         EffectVariant Initialize(
             IMgDevice device,
             IMgPipelineLayout layout,
-            IMgEffectFramework framework,
+            IMgRenderPass renderPass,
             PerVertexInputPipelineState vertexInput,
             EffectVariantOptions options
         );

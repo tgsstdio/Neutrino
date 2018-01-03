@@ -24,7 +24,7 @@ namespace Neutrino.UnitTests
                 ElementByteSize = 0,
             };
 
-            var result = cameras.Extract(0, request);
+            var result = cameras.Prepare(0, request);
             Assert.AreEqual(0, result.Count);
             Assert.IsNotNull(result.Slots);
             Assert.AreEqual(1, result.Slots.Length);
@@ -44,7 +44,7 @@ namespace Neutrino.UnitTests
                 ElementByteSize = 0,                
             };
 
-            var result = cameras.Extract(0, request);
+            var result = cameras.Prepare(0, request);
             Assert.AreEqual(0, result.Count);
             Assert.IsNotNull(result.Slots);
             Assert.AreEqual(1, result.Slots.Length);
@@ -64,7 +64,7 @@ namespace Neutrino.UnitTests
                 ElementByteSize = 0,
             };
 
-            var result = cameras.Extract(2, request);
+            var result = cameras.Prepare(2, request);
             Assert.AreEqual(2, result.Count);
             Assert.IsNotNull(result.Slots);
             Assert.AreEqual(1, result.Slots.Length);
@@ -84,7 +84,7 @@ namespace Neutrino.UnitTests
                 ElementByteSize = 0,                
             };
 
-            var result = cameras.Extract(3, request);
+            var result = cameras.Prepare(3, request);
             Assert.AreEqual(3, result.Count);
             Assert.IsNotNull(result.Slots);
             Assert.AreEqual(1, result.Slots.Length);
@@ -103,7 +103,7 @@ namespace Neutrino.UnitTests
                 ElementByteSize = 0,            
             };
 
-            var result = cameras.Extract(4, request);
+            var result = cameras.Prepare(4, request);
             Assert.AreEqual(4, result.Count);
             Assert.IsNotNull(result.Slots);
             Assert.AreEqual(2, result.Slots.Length);
@@ -123,7 +123,7 @@ namespace Neutrino.UnitTests
                 ElementByteSize = 0,
             };
 
-            var result = cameras.Extract(4, request);
+            var result = cameras.Prepare(4, request);
             Assert.AreEqual(4, result.Count);
             Assert.IsNotNull(result.Slots);
             Assert.AreEqual(2, result.Slots.Length);

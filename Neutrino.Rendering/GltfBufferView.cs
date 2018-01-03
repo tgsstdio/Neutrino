@@ -10,7 +10,9 @@ namespace Neutrino
         {
             BufferIndex = src.Buffer;
             ByteStride = src.ByteStride;
-            BufferOffset = src.ByteOffset;            
+            BufferOffset = src.ByteOffset;
+            ByteLength = src.ByteLength;
+
             Usage = DetrimineUsage(src);
         }
 
@@ -31,5 +33,6 @@ namespace Neutrino
         public int BufferIndex { get; private set; }
         public int? ByteStride { get; private set; }
         public int BufferOffset { get; private set; }
+        public int ByteLength { get; }
     }
 }

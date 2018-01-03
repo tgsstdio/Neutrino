@@ -1,6 +1,6 @@
 ﻿namespace Neutrino
 {
-    public class GtlfRenderNode
+    public class GtlfNodeInfo
     {
         public int? Parent { get; set; }
         public int[] Children { get; set; }
