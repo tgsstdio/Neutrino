@@ -25,7 +25,7 @@ namespace Neutrino
             mPbrEffectPath = pbrEffectPath;
         }
 
-        public void Load(IMgDevice device, IMgEffectFramework framework, string modelFilePath)
+        public GltfScene Load(IMgDevice device, IMgEffectFramework framework, string modelFilePath)
         {
             var model = Interface.LoadModel(modelFilePath);
             var baseDir = Path.GetDirectoryName(modelFilePath);
@@ -40,7 +40,7 @@ namespace Neutrino
                 BucketSize = MAX_NO_OF_CAMERAS,
                 Usage = MgBufferUsageFlagBits.UNIFORM_BUFFER_BIT,
                 MemoryPropertyFlags = MgMemoryPropertyFlagBits.HOST_VISIBLE_BIT,
-            };            
+            };
 
             var cameraSlots = cameraAllocationInfo.Prepare(model.Cameras != null ? model.Cameras.Length : 0, request);
 
@@ -59,6 +59,11 @@ namespace Neutrino
 
             var images = ExtractImages(baseDir, model.Images, bufferViews, buffers);
 
+            var samplers = ExtractSamplers(device, model.Samplers);
+
+            const int MAX_NO_OF_TEXTURES = 16;
+           // var textures = AllocateTextures(MAX_NO_OF_TEXTURES, model.Textures, images);
+
             var materialSlots = materialAllocationInfo.Prepare(model.Materials != null ? model.Materials.Length : 0, request);
 
             var materialChunks = ExtractMaterials(materialSlots.BucketSize, model.Materials);
@@ -72,7 +77,7 @@ namespace Neutrino
 
             var pDsCreateInfo = new MgDescriptorSetLayoutCreateInfo
             {
-                Bindings = new []
+                Bindings = new[]
                 {
                     // CAMERA
                     new MgDescriptorSetLayoutBinding
@@ -95,7 +100,7 @@ namespace Neutrino
                     {
                         Binding = 2,
                         DescriptorType = MgDescriptorType.COMBINED_IMAGE_SAMPLER,
-                        DescriptorCount = 16,
+                        DescriptorCount = MAX_NO_OF_TEXTURES,
                         StageFlags = MgShaderStageFlagBits.FRAGMENT_BIT,
                     },
                 }
@@ -106,10 +111,10 @@ namespace Neutrino
                 throw new InvalidOperationException("CreatePipelineLayout failed");
 
             var pCreateInfo = new MgPipelineLayoutCreateInfo
-            {                
-                SetLayouts = new []
+            {
+                SetLayouts = new[]
                 {
-                    dsLayout, 
+                    dsLayout,
                 }
             };
 
@@ -121,7 +126,7 @@ namespace Neutrino
             var pbrFactory = new PbrEffectVariantFactory(mPbrEffectPath);
 
             var instanceDrawGroups = new Dictionary<GltfInstancedGroupKey, GltfInstanceDrawGroup>();
-            foreach(var node in nodes)
+            foreach (var node in nodes)
             {
                 if (node.Mesh.HasValue)
                 {
@@ -153,7 +158,7 @@ namespace Neutrino
                         {
                             Definition = PerVertexDefinitionEncoder.Encode(primitive.FinalDefinition),
                             Options = EffectVariantEncoder.Encode(options),
-                        };                      
+                        };
 
                         if (!pbrEffect.TryGetValue(key, out EffectVariant found))
                         {
@@ -178,7 +183,7 @@ namespace Neutrino
                             drawGroup = new GltfInstanceDrawGroup
                             {
                                 GroupKey = groupKey,
-                                Variant = found,                                
+                                Variant = found,
                                 Members = new List<GltfInstancedDraw>(),
                             };
 
@@ -212,8 +217,8 @@ namespace Neutrino
                 {
                     MemoryPropertyFlags = MgMemoryPropertyFlagBits.HOST_VISIBLE_BIT,
                     Usage = MgBufferUsageFlagBits.VERTEX_BUFFER_BIT,
-                    ElementByteSize = (uint) stride,
-                    Size = (ulong) (group.Members.Count * stride),
+                    ElementByteSize = (uint)stride,
+                    Size = (ulong)(group.Members.Count * stride),
                 };
 
                 var instanceGroup = new GltfInstanceRenderGroup
@@ -224,6 +229,220 @@ namespace Neutrino
                 };
                 perInstances.Add(instanceGroup);
             }
+
+            var storage = mBuilder.Build(
+                new MgOptimizedStorageCreateInfo
+                {
+                    Allocations = request.ToArray()
+                }
+            );
+
+            // MAP DATA
+
+            var finalMaterials = new List<GltfMaterialInfo>();
+
+            for (var i = 0; i < materialChunks.Length; i += 1)
+            {
+                var slot = materialSlots.Slots[i];
+                var chunk = materialChunks[i];
+                for(var j = 0; j < chunk.Items.Length; j += 1)
+                {                    
+                    var values = chunk.Items[j];
+                    var mat = new GltfMaterialInfo
+                    {                        
+                        StorageIndex = slot,                        
+
+                        BucketIndex = i,
+                        SetOffset = j,
+                        Values = values,
+                    };
+                }
+            }
+
+            return new GltfScene
+            {
+                //Cameras = new []
+                //{
+
+                //},
+                DescriptorSets = new IMgDescriptorSet[]
+                {
+
+                },
+                Effects = new []
+                {
+                    new Effect
+                    {
+                        DescriptorSetLayout = dsLayout,
+                        Layout = layout,
+                        Variants = pbrEffect,
+                    }
+                },
+                //Meshes = new[]
+                //{
+
+                //},
+                Materials = finalMaterials.ToArray(),
+                //Nodes = new []
+                //{
+
+                //},
+                PerInstances = perInstances.ToArray(),
+                Samplers = samplers,
+                Storage = storage,
+                //Textures = new []
+                //{
+
+                //},
+            };
+        }
+
+        //private GltfTextureContainer AllocateTextures(int bucketSize, Texture[] textures, GltfImageData[] images)
+        //{           
+        //    return new GltfTextureContainer
+        //    {
+        //        BucketSize = bucketSize,                
+        //    };
+        //}
+
+        private IMgSampler[] ExtractSamplers(IMgDevice device, Sampler[] samplers)
+        {
+            var noOfSamplers = samplers != null ? samplers.Length : 0;
+
+            var output = new IMgSampler[noOfSamplers];
+            for (var i = 0; i < noOfSamplers; i += 1)
+            {
+                var src = samplers[i];
+
+                var createInfo = new MgSamplerCreateInfo
+                {                    
+                    AddressModeU = GetAddressModeU(src.WrapS),
+                    AddressModeV = GetAddressModeV(src.WrapT),
+                    MinFilter = GetMinFilter(src.MinFilter),
+                    MagFilter = GetMagFilter(src.MagFilter),
+                    MipmapMode = GetMipmapMode(src.MinFilter),
+                };
+
+                var err = device.CreateSampler(createInfo, null, out IMgSampler pSampler);
+                if (err != Result.SUCCESS)
+                    throw new InvalidOperationException();
+                output[i] = pSampler;
+            }
+            return output;
+        }
+
+        private MgSamplerAddressMode GetAddressModeV(Sampler.WrapTEnum wrapT)
+        {
+            switch(wrapT)
+            {
+                case Sampler.WrapTEnum.CLAMP_TO_EDGE:
+                    return MgSamplerAddressMode.CLAMP_TO_EDGE;
+                case Sampler.WrapTEnum.MIRRORED_REPEAT:
+                    return MgSamplerAddressMode.MIRRORED_REPEAT;
+                case Sampler.WrapTEnum.REPEAT:
+                    return MgSamplerAddressMode.REPEAT;
+                default:
+                    throw new InvalidOperationException();
+            }
+        }
+
+        private MgSamplerAddressMode GetAddressModeU(Sampler.WrapSEnum wrapS)
+        {
+            switch(wrapS)
+            {
+                case Sampler.WrapSEnum.CLAMP_TO_EDGE:
+                    return MgSamplerAddressMode.CLAMP_TO_EDGE;
+                case Sampler.WrapSEnum.MIRRORED_REPEAT:
+                    return MgSamplerAddressMode.MIRRORED_REPEAT;
+                case Sampler.WrapSEnum.REPEAT:
+                    return MgSamplerAddressMode.REPEAT;
+                default:
+                    throw new InvalidOperationException();
+            }
+        }
+
+        private static MgSamplerMipmapMode GetMipmapMode(Sampler.MinFilterEnum? minFilter)
+        {
+            if (minFilter.HasValue)
+            {
+                switch (minFilter.Value)
+                {
+                    case Sampler.MinFilterEnum.LINEAR:
+                    case Sampler.MinFilterEnum.NEAREST_MIPMAP_LINEAR:
+                    case Sampler.MinFilterEnum.LINEAR_MIPMAP_LINEAR:
+                        return MgSamplerMipmapMode.LINEAR;
+
+                    case Sampler.MinFilterEnum.NEAREST:    
+                    case Sampler.MinFilterEnum.NEAREST_MIPMAP_NEAREST:
+                    case Sampler.MinFilterEnum.LINEAR_MIPMAP_NEAREST:
+                        return MgSamplerMipmapMode.NEAREST;
+                    default:
+                        throw new InvalidOperationException();
+                }
+            }
+            else
+            {
+                return MgSamplerMipmapMode.NEAREST;
+            }
+        }
+
+        private static MgFilter GetMinFilter(Sampler.MinFilterEnum? minFilter)
+        {
+            if (minFilter.HasValue)
+            {
+                switch (minFilter.Value)
+                {
+                    case Sampler.MinFilterEnum.LINEAR:
+                    case Sampler.MinFilterEnum.LINEAR_MIPMAP_LINEAR:
+                    case Sampler.MinFilterEnum.LINEAR_MIPMAP_NEAREST:
+                        return MgFilter.LINEAR;
+
+                    case Sampler.MinFilterEnum.NEAREST:
+                    case Sampler.MinFilterEnum.NEAREST_MIPMAP_NEAREST:
+                    case Sampler.MinFilterEnum.NEAREST_MIPMAP_LINEAR:
+                        return MgFilter.NEAREST;
+                    default:
+                        throw new InvalidOperationException();
+                }
+            }        
+            else
+            {
+                return MgFilter.LINEAR;
+            }
+        }
+
+        private static MgFilter GetMagFilter(Sampler.MagFilterEnum? magFilter)
+        {
+            if (magFilter.HasValue)
+            {
+                switch(magFilter.Value)
+                {
+                    case Sampler.MagFilterEnum.LINEAR:
+                        return MgFilter.LINEAR;
+                    case Sampler.MagFilterEnum.NEAREST:
+                        return MgFilter.NEAREST;
+                    default:
+                        throw new NotSupportedException();
+                }
+            }
+            else
+            {
+                return MgFilter.LINEAR;
+            }
+        }
+
+        public class GltfMaterialInfo
+        {
+            public uint? SourceIndex { get; set; }
+
+            public int StorageIndex { get; set; }
+
+            public int SetIndex { get; set; }
+
+            public int BucketIndex { get; set; }
+            public int SetOffset { get; set; }
+
+            public GltfMaterialCapsule Values { get; set; }
         }
 
         public class GltfInstanceDrawGroup
@@ -240,13 +459,6 @@ namespace Neutrino
             public int StorageIndex { get; set; }
             public GltfInstancedDraw[] Members { get; set; }
         }
-
-        public class GltfTextureInfo
-        {
-
-        }
-
-
 
         private GltfImageData[] ExtractImages(string baseDir, Image[] images, GltfBufferView[] bufferViews, List<byte[]> buffers)
         {
@@ -375,44 +587,107 @@ namespace Neutrino
             var noOfBuckets = (noOfMaterials / bucketSize) + 1;
 
             var chunks = new GltfMaterialChunk[noOfBuckets];
-   
+
+            var k = 0;
             for(var i =0; i < noOfBuckets; i += 1)
             {
                 chunks[i] = new GltfMaterialChunk
                 {
                     Items = new GltfMaterialCapsule[bucketSize],
                 };
+
+                for (var j = 0; j < bucketSize; j += 1)
+                {
+                    if (i == 0 && j == 0)
+                    {
+                        chunks[i].Items[j] = new GltfMaterialCapsule
+                        {
+                            DoubleSided = false,
+                            UBO = new MaterialUBO
+                            {
+                                BaseTexture = 0,
+                                BaseTextureTexCoords = 0,
+                                BaseColorFactor = new MgVec4f(1f, 1f, 1f, 1f),
+                                MetallicFactor = 1f,
+                                RoughnessFactor = 1f,
+
+                                NormalTexture = 0,
+                                NormalTexCoords = 0,
+                                NormalScale = 1f,
+
+                                OcclusionTexture = 0,
+                                OcclusionTexCoords = 0,
+                                OcclusionStrength = 1f,
+
+                                EmissiveFactor = new Color3f { R = 0f, G = 0f, B = 0f },
+                                AlphaCutoff = 0.5f,
+
+                                // OPAQUE
+                                A = 1.0f, //  A * vec4(fragColor.rgb, 1f))
+                                B = 0f, //  + B * vec4(step(alphacutoff, fragColor.a) * fragColor.rgb, 1f)
+                                C = 0f, //  + C * vec4(fragColor.rgb, fragColor.a)
+                            }
+                        };
+                    }
+                    else
+                    {
+                        if (k < noOfMaterials)
+                        {
+                            var src = materials[k];
+
+                            var temp = new GltfMaterialCapsule
+                            {              
+                                DoubleSided = src.DoubleSided,
+                            };
+
+                            var baseColorFactor = new MgVec4f(1f, 1f, 1f, 1f);
+                            if (src.PbrMetallicRoughness != null)
+                            {
+                                baseColorFactor = new MgVec4f
+                                {
+                                    X = src.PbrMetallicRoughness.BaseColorFactor[0],
+                                    Y = src.PbrMetallicRoughness.BaseColorFactor[1],
+                                    Z = src.PbrMetallicRoughness.BaseColorFactor[2],
+                                    W = src.PbrMetallicRoughness.BaseColorFactor[3],
+                                };
+                            }
+
+                            ushort normalTexCoords = 0;
+                            ushort normalTexSetOffset = 0;
+                            float normalScale = 1f;
+                            if (src.NormalTexture != null)
+                            {
+                                normalScale = src.NormalTexture.Scale;
+                                normalTexSetOffset = (ushort) src.NormalTexture.Index;
+                                normalTexCoords = (ushort) src.NormalTexture.TexCoord;
+                            }
+
+                            temp.UBO = new MaterialUBO
+                            {
+                                BaseColorFactor = baseColorFactor,
+                                EmissiveFactor = (src.EmissiveFactor != null)
+                                    ? new Color3f {
+                                        R = src.EmissiveFactor[0],
+                                        G = src.EmissiveFactor[1],
+                                        B = src.EmissiveFactor[2]
+                                    }
+                                    : new Color3f { R = 0f, G = 0f, B = 0f },
+                                NormalScale = normalScale,
+                                NormalTexCoords = normalTexCoords,
+                                NormalTexture = normalTexSetOffset,
+                            };
+
+
+                            chunks[i].Items[j] = temp;
+
+                            k += 1;
+                        }
+                    }
+                }
             }
 
             // Default - chunk 0, slot 0
-            chunks[0].Items[0] = new GltfMaterialCapsule
-            {
-                DoubleSided = false,
-                UBO = new MaterialUBO
-                {
-                    BaseTexture = 0,
-                    BaseTextureTexCoords = 0,
-                    BaseColorFactor = new MgVec4f(1f, 1f, 1f, 1f),
-                    MetallicFactor = 1f,
-                    RoughnessFactor = 1f,
 
-                    NormalTexture = 0,
-                    NormalTexCoords = 0,
-                    NormalScale = 1f,
-
-                    OcclusionTexture = 0,
-                    OcclusionTexCoords = 0,
-                    OcclusionStrength = 1f,
-
-                    EmissiveFactor = new Color3f { R = 0f, G = 0f, B = 0f },
-                    AlphaCutoff = 0.5f,
-
-                    // OPAQUE
-                    A = 1.0f, //  A * vec4(fragColor.rgb, 1f))
-                    B = 0f, //  + B * vec4(step(alphacutoff, fragColor.a) * fragColor.rgb, 1f)
-                    C = 0f, //  + C * vec4(fragColor.rgb, fragColor.a)
-                }
-            };
 
             return chunks;
         }

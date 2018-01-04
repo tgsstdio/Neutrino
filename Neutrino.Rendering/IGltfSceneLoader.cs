@@ -4,6 +4,6 @@ namespace Neutrino
 {
     public interface IGltfSceneLoader
     {
-        void Load(IMgDevice device, IMgEffectFramework framework, string modelFilePath);
+        GltfScene Load(IMgDevice device, IMgEffectFramework framework, string modelFilePath);
     }
 }

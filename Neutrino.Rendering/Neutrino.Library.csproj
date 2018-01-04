@@ -49,6 +49,7 @@
     <Compile Include="CameraUBO.cs" />
     <Compile Include="Color3f.cs" />
     <Compile Include="DataURL.cs" />
+    <Compile Include="Effect.cs" />
     <Compile Include="EffectPipelineDictionary.cs" />
     <Compile Include="EffectVariant.cs" />
     <Compile Include="EffectVariantDefinition.cs" />
@@ -59,6 +60,7 @@
     <Compile Include="GltfBucketContainer.cs" />
     <Compile Include="GltfBucketMarker.cs" />
     <Compile Include="GltfBufferView.cs" />
+    <Compile Include="GltfCombinedImageSampler.cs" />
     <Compile Include="GltfImageData.cs" />
     <Compile Include="GltfImageMimeType.cs" />
     <Compile Include="GltfInstancedDraw.cs" />
@@ -69,7 +71,11 @@
     <Compile Include="GltfMesh.cs" />
     <Compile Include="GltfMeshPrimitive.cs" />
     <Compile Include="GltfPrimitiveStorageLocation.cs" />
+    <Compile Include="GltfScene.cs" />
     <Compile Include="GltfSceneLoader.cs" />
+    <Compile Include="GltfTextureBucket.cs" />
+    <Compile Include="GltfTextureContainer.cs" />
+    <Compile Include="GltfTextureMarker.cs" />
     <Compile Include="GtlfRenderNode.cs" />
     <Compile Include="Half.cs" />
     <Compile Include="IEffectVariantFactory.cs" />
