@@ -82,6 +82,7 @@
     <Compile Include="IGltfSceneLoader.cs" />
     <Compile Include="IPbrEffectPath.cs" />
     <Compile Include="IPerVertexDataLocator.cs" />
+    <Compile Include="LightUBO.cs" />
     <Compile Include="MaterialUBO.cs" />
     <Compile Include="MathHelper.cs" />
     <Compile Include="MgStorageBlockAllocationRequest.cs" />
@@ -102,6 +103,7 @@
     <Compile Include="PerVertexWeightsType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TkMatrix4.cs" />
+    <Compile Include="TkQuaternion.cs" />
     <Compile Include="TkVector2.cs" />
     <Compile Include="TkVector2h.cs" />
     <Compile Include="TkVector3.cs" />

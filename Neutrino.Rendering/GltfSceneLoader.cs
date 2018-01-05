@@ -61,6 +61,8 @@ namespace Neutrino
 
             var samplers = ExtractSamplers(device, model.Samplers);
 
+            const int MAX_NO_OF_LIGHTS = 4;
+
             const int MAX_NO_OF_TEXTURES = 16;
            // var textures = AllocateTextures(MAX_NO_OF_TEXTURES, model.Textures, images);
 
@@ -87,10 +89,18 @@ namespace Neutrino
                         DescriptorCount = MAX_NO_OF_CAMERAS,
                         StageFlags = MgShaderStageFlagBits.VERTEX_BIT,
                     },
-                    // MATERIALS
+                    // LIGHTS
                     new MgDescriptorSetLayoutBinding
                     {
                         Binding = 1,
+                        DescriptorType = MgDescriptorType.UNIFORM_BUFFER,
+                        DescriptorCount = MAX_NO_OF_LIGHTS,
+                        StageFlags = MgShaderStageFlagBits.VERTEX_BIT,
+                    },
+                    // MATERIALS
+                    new MgDescriptorSetLayoutBinding
+                    {
+                        Binding = 2,
                         DescriptorType = MgDescriptorType.UNIFORM_BUFFER,
                         DescriptorCount = MAX_NO_OF_MATERIALS,
                         StageFlags = MgShaderStageFlagBits.FRAGMENT_BIT,
@@ -98,7 +108,7 @@ namespace Neutrino
                     // TEXTURES
                     new MgDescriptorSetLayoutBinding
                     {
-                        Binding = 2,
+                        Binding = 3,
                         DescriptorType = MgDescriptorType.COMBINED_IMAGE_SAMPLER,
                         DescriptorCount = MAX_NO_OF_TEXTURES,
                         StageFlags = MgShaderStageFlagBits.FRAGMENT_BIT,
@@ -198,8 +208,8 @@ namespace Neutrino
                             {
                                 Translation = node.Transform.ExtractTranslation(),
                                 Scale = node.Transform.ExtractScale(),
-                                Rotation = new TkVector4(1, 1, 1, 1), // TODO 
-                                MaterialIndex = (uint)primitive.Material.Offset,
+                                Rotation = node.Transform.ExtractRotation(true), // TODO 
+                                MaterialIndex = primitive.Material.Offset,
                             },
                         };
 

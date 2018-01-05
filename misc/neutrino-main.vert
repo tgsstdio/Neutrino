@@ -4,11 +4,17 @@
 
 precision highp float;
 
-layout (std140, binding = 0) uniform CameraUBO 
+struct CameraUBO
 {
-	mat4 projection_matrix;
-	mat4 modelview_matrix;
-} cams[1];
+	mat4 ProjectionMatrix;
+	mat4 ViewMatrix;
+	vec4 CameraPosition;
+}
+
+layout (std140, binding = 0) uniform UBOData0 
+{
+	CameraUBO Cameras[1];
+} ubo0;
 
 // PER VERTEX
 layout(location = 0) in vec3 inPosition;
@@ -69,19 +75,19 @@ void vertFunc(void)
   materialIndex = inMaterialIndex;
   
   // TODO: figure this out
-  cameraPos = vec3(0,0,0);
+  cameraPos = ubo0.Cameras[0].CameraPosition;
   
   mat4 rotMatrix = quatToMat4(inRotation);
   
   vec4 localPosition = vec4(inTranslation, 0) + rotMatrix * vec4(inScale * inPosition, 1);  
   vertexPos = localPosition.xyz;
 
-  vec3 normalW = normalize(vec3(u_ModelMatrix * vec4(inNormal.xyz, 0.0)));
-  vec3 tangentW = normalize(vec3(u_ModelMatrix * vec4(inTangent.xyz, 0.0)));
+  vec3 normalW = normalize(vec3(rotMatrix * vec4(inNormal.xyz, 0.0)));
+  vec3 tangentW = normalize(vec3(rotMatrix * vec4(inTangent.xyz, 0.0)));
   vec3 bitangentW = cross(normalW, tangentW) * inTangent.w;
   v_TBN = mat3(tangentW, bitangentW, normalW);  
   
-  gl_Position = cams[0].projection_matrix * cams[0].modelview_matrix * localPosition;
+  gl_Position = ubo0.Cameras[0].ProjectionMatrix * ubo0.Cameras[0].ViewMatrix * localPosition;
   
   // VULKAN => OPENGL
   gl_Position.y *= -1.0;

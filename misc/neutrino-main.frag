@@ -2,7 +2,18 @@
 
 #extension GL_ARB_shading_language_420pack : require
 
-layout (std140, binding = 1) uniform MaterialUBO 
+struct LightUBO
+{
+	vec4 LightColor;
+	vec4 LightDirection;
+}
+
+layout (std140, binding = 1) uniform UBOData1
+{
+	LightUBO Lights[4];
+} ubo1;
+
+struct MaterialUBO 
 {
 	vec4 BaseColorFactor;
 	
@@ -34,9 +45,14 @@ layout (std140, binding = 1) uniform MaterialUBO
 	float PerceptualRoughness;	
 	float Metallic;	
 	float F;	
-} materials[16];
+};
 
-layout (binding = 17) uniform sampler2D combinedImages[16];
+layout (std140, binding = 2) uniform UBOData2
+{
+	MaterialUBO Materials[16];
+} ubo2;
+
+layout (binding = 3) uniform sampler2D combinedImages[16];
 
 precision highp float;
 
@@ -163,32 +179,32 @@ void fragFunc(void)
 	);	
 
 	vec3 normalColor = texture2D(
-		combinedImages[materials[materialIndex].NormalTexture],
-		uvCoords[materials[materialIndex].NormalTexCoords]	
+		combinedImages[ubo2.Materials[materialIndex].NormalTexture],
+		uvCoords[ubo2.Materials[materialIndex].NormalTexCoords]	
 	);
 	
 	vec3 emissiveColor = texture2D(
-		combinedImages[materials[materialIndex].EmissiveTexture],
-		uvCoords[materials[materialIndex].EmissiveTexCoords]
+		combinedImages[ubo2.Materials[materialIndex].EmissiveTexture],
+		uvCoords[ubo2.Materials[materialIndex].EmissiveTexCoords]
 	);
 
 	vec3 occlusionColor = texture2D(
-		combinedImages[materials[materialIndex].OcclusionTexture],
-		uvCoords[materials[materialIndex].OcclusionTexCoords]	
+		combinedImages[ubo2.Materials[materialIndex].OcclusionTexture],
+		uvCoords[ubo2.Materials[materialIndex].OcclusionTexCoords]	
 	);
 	
     // Metallic and Roughness material properties are packed together
     // In glTF, these factors can be specified by fixed scalar values
     // or from a metallic-roughness map
-    float perceptualRoughness = materials[materialIndex].PerceptualRoughness;
-    float metallic = materials[materialIndex].Metallic;	
+    float perceptualRoughness = ubo2.Materials[materialIndex].PerceptualRoughness;
+    float metallic = ubo2.Materials[materialIndex].Metallic;	
 	
     // Roughness is stored in the 'g' channel, metallic is stored in the 'b' channel.
     // This layout intentionally reserves the 'r' channel for (optional) occlusion map data
 	if (materials[materialIndex].MetalicRoughnessTexture > 0) {
 		vec3 roughnessColor = texture2D(
-			combinedImages[materials[materialIndex].MetalicRoughnessTexture],
-			uvCoords[materials[materialIndex].MetalicRoughnessTexCoords]	
+			combinedImages[ubo2.Materials[materialIndex].MetalicRoughnessTexture],
+			uvCoords[ubo2.Materials[materialIndex].MetalicRoughnessTexCoords]	
 		);	
 		perceptualRoughness = roughnessColor.g * perceptualRoughness;
 		metallic = roughnessColor.b * metallic;
@@ -201,14 +217,14 @@ void fragFunc(void)
     float alphaRoughness = perceptualRoughness * perceptualRoughness;
 
     // The albedo may be defined from a base texture or a flat color	
-	vec4 baseColor = materials[materialIndex].BaseColorFactor;	
-	if (materials[materialIndex].BaseTexture > 0)
+	vec4 baseColor = ubo2.Materials[materialIndex].BaseColorFactor;	
+	if (ubo2.Materials[materialIndex].BaseTexture > 0)
 	{
 		baseColor *= 
 			SRGBtoLINEAR(
 				texture2D(
-					combinedImages[materials[materialIndex].BaseTexture],
-					uvCoords[materials[materialIndex].BaseTextureTexCoords]
+					combinedImages[ubo2.Materials[materialIndex].BaseTexture],
+					uvCoords[ubo2.Materials[materialIndex].BaseTextureTexCoords]
 				)
 			);
 	}
@@ -227,7 +243,7 @@ void fragFunc(void)
     vec3 specularEnvironmentR0 = specularColor.rgb;
     vec3 specularEnvironmentR90 = vec3(1.0, 1.0, 1.0) * reflectance90;
 
-    vec3 n = getNormal(uvCoords[materials[materialIndex].NormalTexCoords]); // normal at surface point
+    vec3 n = getNormal(uvCoords[ubo2.Materials[materialIndex].NormalTexCoords]); // normal at surface point
     vec3 v = normalize(cameraPos - vertexPos);        // Vector from surface point to camera
     vec3 l = normalize(u_LightDirection);             // Vector from surface point to light
     vec3 h = normalize(l+v);                          // Half vector between both l and v

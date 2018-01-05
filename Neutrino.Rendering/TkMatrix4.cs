@@ -29,6 +29,7 @@ namespace Neutrino
     /// Represents a 4x4 matrix containing 3D rotation, scale, transform, and projection.
     /// </summary>
     /// <seealso cref="Matrix4d"/>
+    [Serializable]
     [StructLayout(LayoutKind.Sequential)]
     public struct TkMatrix4 : IEquatable<TkMatrix4>
     {
@@ -108,10 +109,10 @@ namespace Neutrino
             Row3 = new TkVector4(m30, m31, m32, m33);
         }
 
-        /// <summary>
-        /// Constructs a new instance.
-        /// </summary>
-        /// <param name="topLeft">The top left 3x3 of the matrix.</param>
+        ///// <summary>
+        ///// Constructs a new instance.
+        ///// </summary>
+        ///// <param name="topLeft">The top left 3x3 of the matrix.</param>
         //public TkMatrix4(Matrix3 topLeft)
         //{
         //    Row0.X = topLeft.Row0.X;
@@ -449,68 +450,68 @@ namespace Neutrino
         /// Returns the rotation component of this instance. Quite slow.
         /// </summary>
         /// <param name="row_normalise">Whether the method should row-normalise (i.e. remove scale from) the Matrix. Pass false if you know it's already normalised.</param>
-        //public Quaternion ExtractRotation(bool row_normalise = true)
-        //{
-        //    var row0 = Row0.Xyz;
-        //    var row1 = Row1.Xyz;
-        //    var row2 = Row2.Xyz;
+        public TkQuaternion ExtractRotation(bool row_normalise = true)
+        {
+            var row0 = Row0.Xyz;
+            var row1 = Row1.Xyz;
+            var row2 = Row2.Xyz;
 
-        //    if (row_normalise)
-        //    {
-        //        row0 = row0.Normalized();
-        //        row1 = row1.Normalized();
-        //        row2 = row2.Normalized();
-        //    }
+            if (row_normalise)
+            {
+                row0 = row0.Normalized();
+                row1 = row1.Normalized();
+                row2 = row2.Normalized();
+            }
 
-        //    // code below adapted from Blender
+            // code below adapted from Blender
 
-        //    Quaternion q = new Quaternion();
-        //    double trace = 0.25 * (row0[0] + row1[1] + row2[2] + 1.0);
+            TkQuaternion q = new TkQuaternion();
+            double trace = 0.25 * (row0[0] + row1[1] + row2[2] + 1.0);
 
-        //    if (trace > 0)
-        //    {
-        //        double sq = Math.Sqrt(trace);
+            if (trace > 0)
+            {
+                double sq = Math.Sqrt(trace);
 
-        //        q.W = (float)sq;
-        //        sq = 1.0 / (4.0 * sq);
-        //        q.X = (float)((row1[2] - row2[1]) * sq);
-        //        q.Y = (float)((row2[0] - row0[2]) * sq);
-        //        q.Z = (float)((row0[1] - row1[0]) * sq);
-        //    }
-        //    else if (row0[0] > row1[1] && row0[0] > row2[2])
-        //    {
-        //        double sq = 2.0 * Math.Sqrt(1.0 + row0[0] - row1[1] - row2[2]);
+                q.W = (float)sq;
+                sq = 1.0 / (4.0 * sq);
+                q.X = (float)((row1[2] - row2[1]) * sq);
+                q.Y = (float)((row2[0] - row0[2]) * sq);
+                q.Z = (float)((row0[1] - row1[0]) * sq);
+            }
+            else if (row0[0] > row1[1] && row0[0] > row2[2])
+            {
+                double sq = 2.0 * Math.Sqrt(1.0 + row0[0] - row1[1] - row2[2]);
 
-        //        q.X = (float)(0.25 * sq);
-        //        sq = 1.0 / sq;
-        //        q.W = (float)((row2[1] - row1[2]) * sq);
-        //        q.Y = (float)((row1[0] + row0[1]) * sq);
-        //        q.Z = (float)((row2[0] + row0[2]) * sq);
-        //    }
-        //    else if (row1[1] > row2[2])
-        //    {
-        //        double sq = 2.0 * Math.Sqrt(1.0 + row1[1] - row0[0] - row2[2]);
+                q.X = (float)(0.25 * sq);
+                sq = 1.0 / sq;
+                q.W = (float)((row2[1] - row1[2]) * sq);
+                q.Y = (float)((row1[0] + row0[1]) * sq);
+                q.Z = (float)((row2[0] + row0[2]) * sq);
+            }
+            else if (row1[1] > row2[2])
+            {
+                double sq = 2.0 * Math.Sqrt(1.0 + row1[1] - row0[0] - row2[2]);
 
-        //        q.Y = (float)(0.25 * sq);
-        //        sq = 1.0 / sq;
-        //        q.W = (float)((row2[0] - row0[2]) * sq);
-        //        q.X = (float)((row1[0] + row0[1]) * sq);
-        //        q.Z = (float)((row2[1] + row1[2]) * sq);
-        //    }
-        //    else
-        //    {
-        //        double sq = 2.0 * Math.Sqrt(1.0 + row2[2] - row0[0] - row1[1]);
+                q.Y = (float)(0.25 * sq);
+                sq = 1.0 / sq;
+                q.W = (float)((row2[0] - row0[2]) * sq);
+                q.X = (float)((row1[0] + row0[1]) * sq);
+                q.Z = (float)((row2[1] + row1[2]) * sq);
+            }
+            else
+            {
+                double sq = 2.0 * Math.Sqrt(1.0 + row2[2] - row0[0] - row1[1]);
 
-        //        q.Z = (float)(0.25 * sq);
-        //        sq = 1.0 / sq;
-        //        q.W = (float)((row1[0] - row0[1]) * sq);
-        //        q.X = (float)((row2[0] + row0[2]) * sq);
-        //        q.Y = (float)((row2[1] + row1[2]) * sq);
-        //    }
+                q.Z = (float)(0.25 * sq);
+                sq = 1.0 / sq;
+                q.W = (float)((row1[0] - row0[1]) * sq);
+                q.X = (float)((row2[0] + row0[2]) * sq);
+                q.Y = (float)((row2[1] + row1[2]) * sq);
+            }
 
-        //    q.Normalize();
-        //    return q;
-        //}
+            q.Normalize();
+            return q;
+        }
 
         /// <summary>
         /// Returns the projection component of this instance.
@@ -528,7 +529,7 @@ namespace Neutrino
         /// <param name="result">A matrix instance.</param>
         public static void CreateFromAxisAngle(TkVector3 axis, float angle, out TkMatrix4 result)
         {
-            // normalize and create a local copy of the vector.
+            // normalize and create a local copy of the TkVector.
             axis.Normalize();
             float axisX = axis.X, axisY = axis.Y, axisZ = axis.Z;
 
@@ -582,25 +583,25 @@ namespace Neutrino
         /// </summary>
         /// <param name="q">The quaternion to rotate by.</param>
         /// <param name="result">A matrix instance.</param>
-        //public static void CreateFromQuaternion(ref Quaternion q, out TkMatrix4 result)
-        //{
-        //    TkVector3 axis;
-        //    float angle;
-        //    q.ToAxisAngle(out axis, out angle);
-        //    CreateFromAxisAngle(axis, angle, out result);
-        //}
+        public static void CreateFromQuaternion(ref TkQuaternion q, out TkMatrix4 result)
+        {
+            TkVector3 axis;
+            float angle;
+            q.ToAxisAngle(out axis, out angle);
+            CreateFromAxisAngle(axis, angle, out result);
+        }
 
         /// <summary>
         /// Builds a rotation matrix from a quaternion.
         /// </summary>
         /// <param name="q">The quaternion to rotate by.</param>
         /// <returns>A matrix instance.</returns>
-        //public static TkMatrix4 CreateFromQuaternion(Quaternion q)
-        //{
-        //    TkMatrix4 result;
-        //    CreateFromQuaternion(ref q, out result);
-        //    return result;
-        //}
+        public static TkMatrix4 CreateFromQuaternion(TkQuaternion q)
+        {
+            TkMatrix4 result;
+            CreateFromQuaternion(ref q, out result);
+            return result;
+        }
 
         /// <summary>
         /// Builds a rotation matrix for a rotation around the x-axis.
@@ -707,14 +708,14 @@ namespace Neutrino
         /// <summary>
         /// Creates a translation matrix.
         /// </summary>
-        /// <param name="vector">The translation vector.</param>
+        /// <param name="TkVector">The translation TkVector.</param>
         /// <param name="result">The resulting Matrix4 instance.</param>
-        public static void CreateTranslation(ref TkVector3 vector, out TkMatrix4 result)
+        public static void CreateTranslation(ref TkVector3 TkVector, out TkMatrix4 result)
         {
             result = Identity;
-            result.Row3.X = vector.X;
-            result.Row3.Y = vector.Y;
-            result.Row3.Z = vector.Z;
+            result.Row3.X = TkVector.X;
+            result.Row3.Y = TkVector.Y;
+            result.Row3.Z = TkVector.Z;
         }
 
         /// <summary>
@@ -734,12 +735,12 @@ namespace Neutrino
         /// <summary>
         /// Creates a translation matrix.
         /// </summary>
-        /// <param name="vector">The translation vector.</param>
+        /// <param name="TkVector">The translation TkVector.</param>
         /// <returns>The resulting Matrix4 instance.</returns>
-        public static TkMatrix4 CreateTranslation(TkVector3 vector)
+        public static TkMatrix4 CreateTranslation(TkVector3 TkVector)
         {
             TkMatrix4 result;
-            CreateTranslation(vector.X, vector.Y, vector.Z, out result);
+            CreateTranslation(TkVector.X, TkVector.Y, TkVector.Z, out result);
             return result;
         }
 
@@ -1052,7 +1053,7 @@ namespace Neutrino
         /// </summary>
         /// <param name="eye">Eye (camera) position in world space</param>
         /// <param name="target">Target position in world space</param>
-        /// <param name="up">Up vector in world space (should not be parallel to the camera direction, that is target - eye)</param>
+        /// <param name="up">Up TkVector in world space (should not be parallel to the camera direction, that is target - eye)</param>
         /// <returns>A Matrix4 that transforms world space to camera space</returns>
         public static TkMatrix4 LookAt(TkVector3 eye, TkVector3 target, TkVector3 up)
         {
@@ -1091,9 +1092,9 @@ namespace Neutrino
         /// <param name="targetX">Target position in world space</param>
         /// <param name="targetY">Target position in world space</param>
         /// <param name="targetZ">Target position in world space</param>
-        /// <param name="upX">Up vector in world space (should not be parallel to the camera direction, that is target - eye)</param>
-        /// <param name="upY">Up vector in world space (should not be parallel to the camera direction, that is target - eye)</param>
-        /// <param name="upZ">Up vector in world space (should not be parallel to the camera direction, that is target - eye)</param>
+        /// <param name="upX">Up TkVector in world space (should not be parallel to the camera direction, that is target - eye)</param>
+        /// <param name="upY">Up TkVector in world space (should not be parallel to the camera direction, that is target - eye)</param>
+        /// <param name="upZ">Up TkVector in world space (should not be parallel to the camera direction, that is target - eye)</param>
         /// <returns>A Matrix4 that transforms world space to camera space</returns>
         public static TkMatrix4 LookAt(float eyeX, float eyeY, float eyeZ, float targetX, float targetY, float targetZ, float upX, float upY, float upZ)
         {
