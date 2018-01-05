@@ -56,6 +56,7 @@ namespace Neutrino
             }
 
             var perInstanceStride = (uint)Marshal.SizeOf(typeof(PerInstance));
+            IncludePerInstanceAttributes(attributes);
 
             return new MgPipelineVertexInputStateCreateInfo
             {
@@ -76,6 +77,69 @@ namespace Neutrino
                 },
                 VertexAttributeDescriptions = attributes.ToArray(),
             };
+        }
+
+        private static void IncludePerInstanceAttributes(List<MgVertexInputAttributeDescription> attributes)
+        {
+            {
+                var attribute = new MgVertexInputAttributeDescription
+                {
+                    Binding = 1U,
+                    Format = MgFormat.R32G32B32_SFLOAT,
+                    Location = 11,
+                    Offset = (uint)Marshal.OffsetOf(typeof(PerInstance), "Translation"),
+                };
+
+                attributes.Add(attribute);
+            }
+
+            {
+                var attribute = new MgVertexInputAttributeDescription
+                {
+                    Binding = 1U,
+                    Format = MgFormat.R32G32B32_SFLOAT,
+                    Location = 12,
+                    Offset = (uint)Marshal.OffsetOf(typeof(PerInstance), "Scale"),
+                };
+
+                attributes.Add(attribute);
+            }
+
+            {
+                var attribute = new MgVertexInputAttributeDescription
+                {
+                    Binding = 1U,
+                    Format = MgFormat.R32G32B32A32_SFLOAT,
+                    Location = 13,
+                    Offset = (uint)Marshal.OffsetOf(typeof(PerInstance), "Rotation"),
+                };
+
+                attributes.Add(attribute);
+            }
+
+            {
+                var attribute = new MgVertexInputAttributeDescription
+                {
+                    Binding = 1U,
+                    Format = MgFormat.R32_SINT,
+                    Location = 14,
+                    Offset = (uint)Marshal.OffsetOf(typeof(PerInstance), "CameraIndex"),
+                };
+
+                attributes.Add(attribute);
+            }
+
+            {
+                var attribute = new MgVertexInputAttributeDescription
+                {
+                    Binding = 1U,
+                    Format = MgFormat.R32_SINT,
+                    Location = 15,
+                    Offset = (uint)Marshal.OffsetOf(typeof(PerInstance), "MaterialIndex"),
+                };
+
+                attributes.Add(attribute);
+            }
         }
 
         private PerVertexStrideInfo GetTexCoordsStride(PerVertexTexCoordsType definition)

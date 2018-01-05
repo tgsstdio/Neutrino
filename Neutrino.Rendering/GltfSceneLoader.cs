@@ -196,7 +196,7 @@ namespace Neutrino
                             GroupKey = groupKey,
                             Instance = new PerInstance
                             {
-                                Position = node.Transform.ExtractTranslation(),
+                                Translation = node.Transform.ExtractTranslation(),
                                 Scale = node.Transform.ExtractScale(),
                                 Rotation = new TkVector4(1, 1, 1, 1), // TODO 
                                 MaterialIndex = (uint)primitive.Material.Offset,

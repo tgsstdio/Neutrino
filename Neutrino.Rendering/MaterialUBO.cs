@@ -16,34 +16,38 @@ namespace Neutrino
         public MgVec4f BaseColorFactor { get; set; }
 
         // 4 
-        public ushort BaseTexture { get; set; }
-        public ushort BaseTextureTexCoords { get; set; }
-
-        public ushort MetalicRoughnessTexture { get; set; }
-        public ushort MetalicRoughnessTexCoords { get; set; }
-
-        public ushort NormalTexture { get; set; }
-        public ushort NormalTexCoords { get; set; }
-
-        public ushort EmissiveTexture { get; set; }
-        public ushort EmissiveTexCoords { get; set; }
+        public int BaseTexture { get; set; }
+        public int BaseTextureTexCoords { get; set; }
+        public int EmissiveTexture { get; set; }
+        public int EmissiveTexCoords { get; set; }
 
         // 8
-        public ushort OcclusionTexture { get; set; }
-        public ushort OcclusionTexCoords { get; set; }
-
-        public float MetallicFactor { get; set; }
-        public float RoughnessFactor { get; set; }
+        public Color3f EmissiveFactor { get; set; }
         public float NormalScale { get; set; }
 
         // 12
-        public Color3f EmissiveFactor { get; set; }
-        public float OcclusionStrength { get; set; }
+        public int MetalicRoughnessTexture { get; set; }
+        public int MetalicRoughnessTexCoords { get; set; }
+        public float MetallicFactor { get; set; }
+        public float RoughnessFactor { get; set; }
 
         // 16
+        public int NormalTexture { get; set; }
+        public int NormalTexCoords { get; set; }
+        public int OcclusionTexture { get; set; }
+        public int OcclusionTexCoords { get; set; }
+
+        // 20
+        public float OcclusionStrength { get; set; }
         public float AlphaCutoff { get; set; }
         public float A { get; set; }
         public float B { get; set; }
+
+        // 24
         public float C { get; set; }
+        public float PerceptualRoughness { get; set; }
+        public float Metallic { get; set; }
+        public float F { get; set; }
+
     }
 }
