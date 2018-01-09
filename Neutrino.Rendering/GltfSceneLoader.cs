@@ -178,42 +178,7 @@ namespace Neutrino
                             pbrEffect.Add(key, found);
                         }
 
-                        var groupKey = new GltfInstancedGroupKey
-                        {
-                            MeshIndex = meshIndex,
-                            CameraSlotIndex = 0,
-                            TextureSlotIndex = 0,
-                            MaterialSlotIndex = primitive.Material.StorageIndex,
-
-                            VariantKey = key,
-                        };
-
-                        if (!instanceDrawGroups.TryGetValue(groupKey, out GltfInstanceDrawGroup drawGroup))
-                        {
-                            drawGroup = new GltfInstanceDrawGroup
-                            {
-                                GroupKey = groupKey,
-                                Variant = found,
-                                Members = new List<GltfInstancedDraw>(),
-                            };
-
-                            instanceDrawGroups.Add(groupKey, drawGroup);
-                        }
-
-                        var instancedDraw = new GltfInstancedDraw
-                        {
-                            Key = key,
-                            GroupKey = groupKey,
-                            Instance = new PerInstance
-                            {
-                                Translation = node.Transform.ExtractTranslation(),
-                                Scale = node.Transform.ExtractScale(),
-                                Rotation = node.Transform.ExtractRotation(true), // TODO 
-                                MaterialIndex = primitive.Material.Offset,
-                            },
-                        };
-
-                        drawGroup.Members.Add(instancedDraw);
+                        AppendToGroup(instanceDrawGroups, node, meshIndex, primitive, key, found);
                     }
                 }
             }
@@ -305,6 +270,46 @@ namespace Neutrino
 
                 //},
             };
+        }
+
+        private static void AppendToGroup(Dictionary<GltfInstancedGroupKey, GltfInstanceDrawGroup> instanceDrawGroups, GtlfNodeInfo node, int meshIndex, GltfMeshPrimitive primitive, EffectVariantKey key, EffectVariant found)
+        {
+            var groupKey = new GltfInstancedGroupKey
+            {
+                MeshIndex = meshIndex,
+                CameraSlotIndex = 0,
+                TextureSlotIndex = 0,
+                MaterialSlotIndex = primitive.Material.StorageIndex,
+
+                VariantKey = key,
+            };
+
+            if (!instanceDrawGroups.TryGetValue(groupKey, out GltfInstanceDrawGroup drawGroup))
+            {
+                drawGroup = new GltfInstanceDrawGroup
+                {
+                    GroupKey = groupKey,
+                    Variant = found,
+                    Members = new List<GltfInstancedDraw>(),
+                };
+
+                instanceDrawGroups.Add(groupKey, drawGroup);
+            }
+
+            var instancedDraw = new GltfInstancedDraw
+            {
+                Key = key,
+                GroupKey = groupKey,
+                Instance = new PerInstance
+                {
+                    Translation = node.Transform.ExtractTranslation(),
+                    Scale = node.Transform.ExtractScale(),
+                    Rotation = node.Transform.ExtractRotation(true), // TODO 
+                    MaterialIndex = primitive.Material.Offset,
+                },
+            };
+
+            drawGroup.Members.Add(instancedDraw);
         }
 
         //private GltfTextureContainer AllocateTextures(int bucketSize, Texture[] textures, GltfImageData[] images)

@@ -28,7 +28,34 @@ namespace TriangleDemo
 
         public void Prepare(IMgGraphicsConfiguration configuration, IMgGraphicsDevice screen)
         {
-        
+            // load model file
+
+            // allocate partitions for static data
+                // mesh
+                // images
+                // materials
+                // cameras
+
+            // initialize static data storage 
+
+            // build artifacts
+                // render target
+                // descriptor set layout + pipeline layout                
+                // pipeline          
+
+            // allocate dynamic data
+                // lights 
+                // per instance data
+                // semaphores 
+                // fences
+            
+            // initialize dynamic data storage           
+
+            // copy data across
+                // buffers 
+                // images
+
+            // map dynamic data 
         }
 
         public void ReleaseManagedResources(IMgGraphicsConfiguration configuration)
