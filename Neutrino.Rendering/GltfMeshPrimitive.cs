@@ -4,11 +4,10 @@ namespace Neutrino
 {
     public class GltfMeshPrimitive
     {
-        public MgPrimitiveTopology Topology { get; internal set; }
-        public PerVertexDefinition InitialDefinition { get; internal set; }
-        public GltfBucketMarker Material { get; internal set; }
-        public PerVertexDefinition FinalDefinition { get; internal set; }
-        public uint VertexCount { get; internal set; }
-        internal IPerVertexDataLocator VertexLocations { get; set; }
+        public MgPrimitiveTopology Topology { get; set; }
+        public PerVertexDefinition InitialDefinition { get; set; }
+        public int? Material { get; set; }
+        public uint VertexCount { get; set; }
+        public IPerVertexDataLocator VertexLocations { get; set; }
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace Neutrino
 {
-    class GltfInterleavedOperation
+    public class GltfInterleavedOperation
     {
         public int Count { get; set; }
         public uint TotalSize { get; set; }

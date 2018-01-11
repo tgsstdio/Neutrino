@@ -33,29 +33,34 @@ namespace TriangleDemo
             // allocate partitions for static data
                 // mesh
                 // images
-                // materials
-                // cameras
 
             // initialize static data storage 
 
-            // build artifacts
+            // build static artifacts
                 // render target
                 // descriptor set layout + pipeline layout                
                 // pipeline          
 
             // allocate dynamic data
                 // lights 
+                // materials
+                // cameras
                 // per instance data
+
+            // build dynamic artifacts
                 // semaphores 
                 // fences
-            
+                // descriptor sets
+
             // initialize dynamic data storage           
 
             // copy data across
-                // buffers 
-                // images
+            // buffers 
+            // images
 
             // map dynamic data 
+
+            // build command buffers
         }
 
         public void ReleaseManagedResources(IMgGraphicsConfiguration configuration)

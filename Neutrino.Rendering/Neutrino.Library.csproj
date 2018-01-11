@@ -72,11 +72,10 @@
     <Compile Include="GltfMeshPrimitive.cs" />
     <Compile Include="GltfPrimitiveStorageLocation.cs" />
     <Compile Include="GltfScene.cs" />
-    <Compile Include="GltfSceneLoader.cs" />
     <Compile Include="GltfTextureBucket.cs" />
     <Compile Include="GltfTextureContainer.cs" />
     <Compile Include="GltfTextureMarker.cs" />
-    <Compile Include="GtlfRenderNode.cs" />
+    <Compile Include="GltfNodeInfo.cs" />
     <Compile Include="Half.cs" />
     <Compile Include="IEffectVariantFactory.cs" />
     <Compile Include="IGltfSceneLoader.cs" />

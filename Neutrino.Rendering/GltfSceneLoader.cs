@@ -272,7 +272,7 @@ namespace Neutrino
             };
         }
 
-        private static void AppendToGroup(Dictionary<GltfInstancedGroupKey, GltfInstanceDrawGroup> instanceDrawGroups, GtlfNodeInfo node, int meshIndex, GltfMeshPrimitive primitive, EffectVariantKey key, EffectVariant found)
+        private static void AppendToGroup(Dictionary<GltfInstancedGroupKey, GltfInstanceDrawGroup> instanceDrawGroups, GltfNodeInfo node, int meshIndex, GltfMeshPrimitive primitive, EffectVariantKey key, EffectVariant found)
         {
             var groupKey = new GltfInstancedGroupKey
             {
@@ -911,7 +911,7 @@ namespace Neutrino
 
             for (var i = 0; i < noOfItems; i += 1)
             {
-                var result = new GltfMesh(model.Meshes[i], accessors, materials);
+                var result = new GltfMesh(model.Meshes[i], accessors);
                 output[i] = result;
             }
             return output;
@@ -942,15 +942,15 @@ namespace Neutrino
         }
 
 
-        private GtlfNodeInfo[] ExtractNodes(Gltf model, GltfBucketContainer cameras)
+        private GltfNodeInfo[] ExtractNodes(Gltf model, GltfBucketContainer cameras)
         {
             var noOfNodes = model.Nodes != null ? model.Nodes.Length : 0;
-            var allNodes = new GtlfNodeInfo[noOfNodes];
+            var allNodes = new GltfNodeInfo[noOfNodes];
 
             for (var i = 0; i < noOfNodes; i += 1)
             {
                 var srcNode = model.Nodes[i];
-                var destNode = new GtlfNodeInfo
+                var destNode = new GltfNodeInfo
                 {
                     Name = srcNode.Name,
                     NodeIndex = i,
@@ -1004,7 +1004,7 @@ namespace Neutrino
            }
         }
 
-        public static void LinkToParents(GtlfNodeInfo[] allNodes)
+        public static void LinkToParents(GltfNodeInfo[] allNodes)
         {
             foreach (var srcParentNode in allNodes)
             {

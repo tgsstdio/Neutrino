@@ -2,7 +2,7 @@
 
 namespace Neutrino
 {
-    internal class PerVertexDataLocator : IPerVertexDataLocator
+    public class PerVertexDataLocator : IPerVertexDataLocator
     {
         public PerVertexDataLocator(int? indices, Dictionary<string, int> attributes)
         {
