@@ -61,6 +61,7 @@
     <Compile Include="GltfBucketMarker.cs" />
     <Compile Include="GltfBufferView.cs" />
     <Compile Include="GltfCombinedImageSampler.cs" />
+    <Compile Include="GltfElementType.cs" />
     <Compile Include="GltfImageData.cs" />
     <Compile Include="GltfImageMimeType.cs" />
     <Compile Include="GltfInstancedDraw.cs" />

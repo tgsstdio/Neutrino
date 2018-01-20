@@ -32,12 +32,68 @@ namespace Neutrino.UnitTests
 
             for (var i = 0; i < noOfNodes; i += 1)
             {
-                allNodes[i] = new GltfNodeInfo(nodes[i]);
+                allNodes[i] = ExtractNewNode(nodes[i]);
             }
 
             RelinkParents(allNodes);
             return allNodes;
         }
+
+        private static GltfNodeInfo ExtractNewNode(Node src)
+        {
+            return new GltfNodeInfo
+            {
+                Name = src.Name,
+                Camera = src.Camera,
+                Children = src.Children ?? (new int[] { }),
+                Transform = GenerateTransform(src),
+                Mesh = src.Mesh,
+            };
+        }
+
+        private static TkMatrix4 GenerateTransform(Node srcNode)
+        {
+            if (srcNode.Matrix != null && srcNode.Matrix.Length == 16)
+            {
+                var src = srcNode.Matrix;
+                return new TkMatrix4(
+                    src[0], src[1], src[2], src[3],
+                    src[4], src[5], src[6], src[7],
+                    src[8], src[9], src[10], src[11],
+                    src[12], src[13], src[14], src[15]
+                );
+            }
+            else
+            {
+                var firstOp =
+                    (srcNode.Scale != null && srcNode.Scale.Length == 3)
+                    ? TkMatrix4.CreateScale(srcNode.Scale[0], srcNode.Scale[1], srcNode.Scale[2])
+                    : TkMatrix4.CreateScale(1, 1, 1);
+
+                var quat = new TkQuaternion(0f, 0f, 0f, 1f);
+
+                if (srcNode.Rotation != null && srcNode.Rotation.Length == 4)
+                {
+                    quat = new TkQuaternion(
+                        srcNode.Rotation[0],
+                        srcNode.Rotation[1],
+                        srcNode.Rotation[2],
+                        srcNode.Rotation[3]);
+                }
+
+                var secondOp = TkMatrix4.CreateFromQuaternion(quat);
+
+                var thirdOp =
+                    (srcNode.Translation != null && srcNode.Translation.Length == 3)
+                    ? TkMatrix4.CreateTranslation(srcNode.Translation[0], srcNode.Translation[1], srcNode.Translation[2])
+                    : TkMatrix4.CreateTranslation(0, 0, 0);
+
+                // T * (R * S)
+                TkMatrix4.Mult(ref secondOp, ref firstOp, out TkMatrix4 result);
+                return TkMatrix4.Mult(thirdOp, result);
+            }
+        }
+
 
         public static void RelinkParents(GltfNodeInfo[] allNodes)
         {
@@ -60,6 +116,8 @@ namespace Neutrino.UnitTests
 
         #endregion
 
+        #region ExtractAccessors methods
+
         private static GltfAccessor[] ExtractAccessors(Accessor[] accessors)
         {
             var noOfItems = accessors != null ? accessors.Length : 0;
@@ -67,11 +125,190 @@ namespace Neutrino.UnitTests
 
             for (var i = 0; i < noOfItems; i += 1)
             {
-                output[i] = new GltfAccessor(accessors[i]);
+                output[i] = ExtractNewAccessor(accessors[i]);
             }
 
             return output;
         }
+
+        private static GltfAccessor ExtractNewAccessor(Accessor srcAccessor)
+        {
+            var elementByteSize = DetermineByteSize(srcAccessor.ComponentType);
+            var noOfComponents = DetermineNoOfComponents(srcAccessor.Type);
+            var totalByteSize = (ulong)(elementByteSize * noOfComponents * srcAccessor.Count);
+
+            return new GltfAccessor
+            {
+                BufferView = srcAccessor.BufferView,
+                ViewOffset = srcAccessor.ByteOffset,
+                Format = DetermineFormat(
+                    srcAccessor.Type,
+                    srcAccessor.ComponentType),
+                ElementType = DetermineElementType(srcAccessor.ComponentType),
+                ElementByteSize = elementByteSize,
+                NoOfComponents = noOfComponents,
+                ElementCount = srcAccessor.Count,
+                TotalByteSize = totalByteSize,
+            };
+        }
+
+        private static GltfElementType DetermineElementType(Accessor.ComponentTypeEnum componentType)
+        {
+            switch (componentType)
+            {
+                case Accessor.ComponentTypeEnum.BYTE:
+                    return GltfElementType.SByte;
+                case Accessor.ComponentTypeEnum.UNSIGNED_BYTE:
+                    return GltfElementType.Byte;
+                case Accessor.ComponentTypeEnum.SHORT:
+                    return GltfElementType.Short;
+                case Accessor.ComponentTypeEnum.UNSIGNED_SHORT:
+                    return GltfElementType.Ushort;
+                case Accessor.ComponentTypeEnum.UNSIGNED_INT:
+                    return GltfElementType.Uint;
+                case Accessor.ComponentTypeEnum.FLOAT:
+                    return GltfElementType.Float;
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
+        private static uint DetermineByteSize(Accessor.ComponentTypeEnum componentType)
+        {
+            switch (componentType)
+            {
+                case Accessor.ComponentTypeEnum.BYTE:
+                    return 1U;
+                case Accessor.ComponentTypeEnum.UNSIGNED_BYTE:
+                    return 1U;
+                case Accessor.ComponentTypeEnum.SHORT:
+                    return 2U;
+                case Accessor.ComponentTypeEnum.UNSIGNED_SHORT:
+                    return 2U;
+                case Accessor.ComponentTypeEnum.UNSIGNED_INT:
+                    return 4U;
+                case Accessor.ComponentTypeEnum.FLOAT:
+                    return 4U;
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
+        private static uint DetermineNoOfComponents(Accessor.TypeEnum type)
+        {
+            switch (type)
+            {
+                case Accessor.TypeEnum.SCALAR:
+                    return 1U;
+                case Accessor.TypeEnum.VEC2:
+                    return 2U;
+                case Accessor.TypeEnum.VEC3:
+                    return 3U;
+                case Accessor.TypeEnum.VEC4:
+                    return 4U;
+                case Accessor.TypeEnum.MAT2:
+                    return 4U;
+                case Accessor.TypeEnum.MAT3:
+                    return 9U;
+                case Accessor.TypeEnum.MAT4:
+                    return 16U;
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
+        private static MgFormat DetermineFormat(Accessor.TypeEnum type, Accessor.ComponentTypeEnum componentType)
+        {
+            if (type == Accessor.TypeEnum.SCALAR)
+            {
+                switch (componentType)
+                {
+                    case Accessor.ComponentTypeEnum.BYTE:
+                        return MgFormat.R8_SINT;
+                    case Accessor.ComponentTypeEnum.UNSIGNED_BYTE:
+                        return MgFormat.R8_UINT;
+                    case Accessor.ComponentTypeEnum.FLOAT:
+                        return MgFormat.R32_SFLOAT;
+                    case Accessor.ComponentTypeEnum.SHORT:
+                        return MgFormat.R16_SINT;
+                    case Accessor.ComponentTypeEnum.UNSIGNED_SHORT:
+                        return MgFormat.R16_UINT;
+                    case Accessor.ComponentTypeEnum.UNSIGNED_INT:
+                        return MgFormat.R32_UINT;
+                    default:
+                        throw new NotSupportedException();
+                }
+            }
+            else if (type == Accessor.TypeEnum.VEC2)
+            {
+                switch (componentType)
+                {
+                    case Accessor.ComponentTypeEnum.BYTE:
+                        return MgFormat.R8G8_SINT;
+                    case Accessor.ComponentTypeEnum.UNSIGNED_BYTE:
+                        return MgFormat.R8G8_UINT;
+                    case Accessor.ComponentTypeEnum.FLOAT:
+                        return MgFormat.R32G32_SFLOAT;
+                    case Accessor.ComponentTypeEnum.SHORT:
+                        return MgFormat.R16G16_SINT;
+                    case Accessor.ComponentTypeEnum.UNSIGNED_SHORT:
+                        return MgFormat.R16G16_UINT;
+                    case Accessor.ComponentTypeEnum.UNSIGNED_INT:
+                        return MgFormat.R32G32_UINT;
+                    default:
+                        throw new NotSupportedException();
+                }
+            }
+            else if (type == Accessor.TypeEnum.VEC3)
+            {
+                switch (componentType)
+                {
+                    case Accessor.ComponentTypeEnum.BYTE:
+                        return MgFormat.R8G8B8_SINT;
+                    case Accessor.ComponentTypeEnum.UNSIGNED_BYTE:
+                        return MgFormat.R8G8B8_UINT;
+                    case Accessor.ComponentTypeEnum.FLOAT:
+                        return MgFormat.R32G32B32_SFLOAT;
+                    case Accessor.ComponentTypeEnum.SHORT:
+                        return MgFormat.R16G16B16_SINT;
+                    case Accessor.ComponentTypeEnum.UNSIGNED_SHORT:
+                        return MgFormat.R16G16B16_UINT;
+                    case Accessor.ComponentTypeEnum.UNSIGNED_INT:
+                        return MgFormat.R32G32B32_UINT;
+                    default:
+                        throw new NotSupportedException();
+                }
+            }
+            else if (type == Accessor.TypeEnum.VEC4)
+            {
+                switch (componentType)
+                {
+                    case Accessor.ComponentTypeEnum.BYTE:
+                        return MgFormat.R8G8B8A8_SINT;
+                    case Accessor.ComponentTypeEnum.UNSIGNED_BYTE:
+                        return MgFormat.R8G8B8A8_UINT;
+                    case Accessor.ComponentTypeEnum.FLOAT:
+                        return MgFormat.R32G32B32A32_SFLOAT;
+                    case Accessor.ComponentTypeEnum.SHORT:
+                        return MgFormat.R16G16B16A16_SINT;
+                    case Accessor.ComponentTypeEnum.UNSIGNED_SHORT:
+                        return MgFormat.R16G16B16A16_UINT;
+                    case Accessor.ComponentTypeEnum.UNSIGNED_INT:
+                        return MgFormat.R32G32B32A32_UINT;
+                    default:
+                        throw new NotSupportedException();
+                }
+            }
+            else
+            {
+                throw new NotSupportedException();
+            }
+
+        }
+
+        #endregion
+
+        #region ExtractBufferViews methods
 
         private static GltfBufferView[] ExtractBufferViews(BufferView[] bufferViews)
         {
@@ -83,6 +320,8 @@ namespace Neutrino.UnitTests
             }
             return output;
         }
+
+        #endregion
 
         #region ExtractCameras methods 
 
@@ -392,6 +631,8 @@ namespace Neutrino.UnitTests
 
         #endregion
 
+        #region ExtractSamplers methods
+
         private static GltfSampler[] ExtractSamplers(Sampler[] samplers)
         {
             var noOfSamplers = samplers != null ? samplers.Length : 0;
@@ -399,10 +640,126 @@ namespace Neutrino.UnitTests
             var output = new GltfSampler[noOfSamplers];
             for (var i = 0; i < noOfSamplers; i += 1)
             {
-                output[i] = new GltfSampler(samplers[i]);
+                output[i] = ExtractNewSampler(samplers[i]);
             }
             return output;
         }
+
+        private static GltfSampler ExtractNewSampler(Sampler src)
+        {
+            return new GltfSampler
+            {
+                AddressModeU = GetAddressModeU(src.WrapS),
+                AddressModeV = GetAddressModeV(src.WrapT),
+                MinFilter = GetMinFilter(src.MinFilter),
+                MagFilter = GetMagFilter(src.MagFilter),
+                MipmapMode = GetMipmapMode(src.MinFilter),
+            };
+        }
+
+        private static MgSamplerAddressMode GetAddressModeV(Sampler.WrapTEnum wrapT)
+        {
+            switch (wrapT)
+            {
+                case Sampler.WrapTEnum.CLAMP_TO_EDGE:
+                    return MgSamplerAddressMode.CLAMP_TO_EDGE;
+                case Sampler.WrapTEnum.MIRRORED_REPEAT:
+                    return MgSamplerAddressMode.MIRRORED_REPEAT;
+                case Sampler.WrapTEnum.REPEAT:
+                    return MgSamplerAddressMode.REPEAT;
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
+        private static MgSamplerAddressMode GetAddressModeU(Sampler.WrapSEnum wrapS)
+        {
+            switch (wrapS)
+            {
+                case Sampler.WrapSEnum.CLAMP_TO_EDGE:
+                    return MgSamplerAddressMode.CLAMP_TO_EDGE;
+                case Sampler.WrapSEnum.MIRRORED_REPEAT:
+                    return MgSamplerAddressMode.MIRRORED_REPEAT;
+                case Sampler.WrapSEnum.REPEAT:
+                    return MgSamplerAddressMode.REPEAT;
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
+        private static MgSamplerMipmapMode GetMipmapMode(Sampler.MinFilterEnum? minFilter)
+        {
+            if (minFilter.HasValue)
+            {
+                switch (minFilter.Value)
+                {
+                    case Sampler.MinFilterEnum.LINEAR:
+                    case Sampler.MinFilterEnum.NEAREST_MIPMAP_LINEAR:
+                    case Sampler.MinFilterEnum.LINEAR_MIPMAP_LINEAR:
+                        return MgSamplerMipmapMode.LINEAR;
+
+                    case Sampler.MinFilterEnum.NEAREST:
+                    case Sampler.MinFilterEnum.NEAREST_MIPMAP_NEAREST:
+                    case Sampler.MinFilterEnum.LINEAR_MIPMAP_NEAREST:
+                        return MgSamplerMipmapMode.NEAREST;
+                    default:
+                        throw new NotSupportedException();
+                }
+            }
+            else
+            {
+                return MgSamplerMipmapMode.NEAREST;
+            }
+        }
+
+        private static MgFilter GetMinFilter(Sampler.MinFilterEnum? minFilter)
+        {
+            if (minFilter.HasValue)
+            {
+                switch (minFilter.Value)
+                {
+                    case Sampler.MinFilterEnum.LINEAR:
+                    case Sampler.MinFilterEnum.LINEAR_MIPMAP_LINEAR:
+                    case Sampler.MinFilterEnum.LINEAR_MIPMAP_NEAREST:
+                        return MgFilter.LINEAR;
+
+                    case Sampler.MinFilterEnum.NEAREST:
+                    case Sampler.MinFilterEnum.NEAREST_MIPMAP_NEAREST:
+                    case Sampler.MinFilterEnum.NEAREST_MIPMAP_LINEAR:
+                        return MgFilter.NEAREST;
+                    default:
+                        throw new NotSupportedException();
+                }
+            }
+            else
+            {
+                return MgFilter.LINEAR;
+            }
+        }
+
+        private static MgFilter GetMagFilter(Sampler.MagFilterEnum? magFilter)
+        {
+            if (magFilter.HasValue)
+            {
+                switch (magFilter.Value)
+                {
+                    case Sampler.MagFilterEnum.LINEAR:
+                        return MgFilter.LINEAR;
+                    case Sampler.MagFilterEnum.NEAREST:
+                        return MgFilter.NEAREST;
+                    default:
+                        throw new NotSupportedException();
+                }
+            }
+            else
+            {
+                return MgFilter.LINEAR;
+            }
+        }
+
+        #endregion
+
+        #region ExtractTextures methods 
 
         private static GltfTexture[] ExtractTextures(Texture[] textures)
         {
@@ -411,10 +768,21 @@ namespace Neutrino.UnitTests
             var output = new GltfTexture[noOfSamplers];
             for (var i = 0; i < noOfSamplers; i += 1)
             {
-                output[i] = new GltfTexture(textures[i]);
+                output[i] = ExtractNewTexture(textures[i]);
             }
             return output;
         }
+
+        private static GltfTexture ExtractNewTexture(Texture texture)
+        {
+            return new GltfTexture
+            {
+                Image = texture.Source,
+                Sampler = texture.Sampler,
+            };
+        }
+
+        #endregion
     }
     
 }
