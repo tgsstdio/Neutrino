@@ -1,6 +1,6 @@
 ﻿namespace Neutrino
 {
-    public interface IPerVertexDataLocator
+    public interface IMgtfPerVertexDataLocator
     {
         int? Indices { get; }
         int? Position { get; }

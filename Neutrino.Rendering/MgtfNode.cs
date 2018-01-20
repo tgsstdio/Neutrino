@@ -1,8 +1,6 @@
-﻿using glTFLoader.Schema;
-
-namespace Neutrino
+﻿namespace Neutrino
 {
-    public class GltfNodeInfo
+    public class MgtfNode
     {
         public int? Parent { get; set; }
         public int? Camera { get; set; }

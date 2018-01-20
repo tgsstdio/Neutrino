@@ -2,7 +2,7 @@
 
 namespace Neutrino
 {
-    public class GltfAccessor
+    public class MgtfAccessor
     {
         public int? BufferView { get; set; }
         public int ViewOffset { get; set; }

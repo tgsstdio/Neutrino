@@ -1,6 +1,6 @@
-﻿namespace Neutrino.UnitTests
+﻿namespace Neutrino
 {
-    public class GltfTexture
+    public class MgtfTexture
     {
         public int? Image { get; set; }
         public int? Sampler { get; set; }

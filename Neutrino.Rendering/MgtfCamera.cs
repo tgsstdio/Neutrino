@@ -1,14 +1,8 @@
-﻿namespace Neutrino.UnitTests
+﻿namespace Neutrino
 {
-    public class GltfCamera
+    public class MgtfCamera
     {
-        public enum CameraType
-        {
-            Perspective,
-            Orthogonal,
-        }
-
-        public CameraType ProjectionType { get; set; }
+        public MgtfCameraType ProjectionType { get; set; }
         public float? AspectRatio { get; set; }
         public double[] Values { get; set; }
 
@@ -23,7 +17,7 @@
         {
             var dx = Values[DENOMINATOR_0_0];
 
-            var d = (ProjectionType == CameraType.Perspective)
+            var d = (ProjectionType == MgtfCameraType.Perspective)
                 ? (AspectRatio.HasValue)
                     ? AspectRatio.Value * dx
                     : ((width / height) * dx)

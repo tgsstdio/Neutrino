@@ -6,11 +6,11 @@ namespace Neutrino.UnitTests
 {
     public class Loader
     {
-        public MetaFile LoadMetaData(Gltf model)
+        public MgtfModelMetaFile LoadMetaData(Gltf model)
         {
             var accessors = ExtractAccessors(model.Accessors);
 
-            return new MetaFile
+            return new MgtfModelMetaFile
             {
                 Accessors = accessors,
                 BufferViews = ExtractBufferViews(model.BufferViews),
@@ -25,10 +25,10 @@ namespace Neutrino.UnitTests
 
         #region ExtractNodes methods 
 
-        private static GltfNodeInfo[] ExtractNodes(Node[] nodes)
+        private static MgtfNode[] ExtractNodes(Node[] nodes)
         {
             var noOfNodes = nodes != null ? nodes.Length : 0;
-            var allNodes = new GltfNodeInfo[noOfNodes];
+            var allNodes = new MgtfNode[noOfNodes];
 
             for (var i = 0; i < noOfNodes; i += 1)
             {
@@ -39,9 +39,9 @@ namespace Neutrino.UnitTests
             return allNodes;
         }
 
-        private static GltfNodeInfo ExtractNewNode(Node src)
+        private static MgtfNode ExtractNewNode(Node src)
         {
-            return new GltfNodeInfo
+            return new MgtfNode
             {
                 Name = src.Name,
                 Camera = src.Camera,
@@ -95,7 +95,7 @@ namespace Neutrino.UnitTests
         }
 
 
-        public static void RelinkParents(GltfNodeInfo[] allNodes)
+        public static void RelinkParents(MgtfNode[] allNodes)
         {
             for (var i = 0; i < allNodes.Length; i += 1)
             {                     
@@ -118,10 +118,10 @@ namespace Neutrino.UnitTests
 
         #region ExtractAccessors methods
 
-        private static GltfAccessor[] ExtractAccessors(Accessor[] accessors)
+        private static MgtfAccessor[] ExtractAccessors(Accessor[] accessors)
         {
             var noOfItems = accessors != null ? accessors.Length : 0;
-            var output = new GltfAccessor[noOfItems];
+            var output = new MgtfAccessor[noOfItems];
 
             for (var i = 0; i < noOfItems; i += 1)
             {
@@ -131,13 +131,13 @@ namespace Neutrino.UnitTests
             return output;
         }
 
-        private static GltfAccessor ExtractNewAccessor(Accessor srcAccessor)
+        private static MgtfAccessor ExtractNewAccessor(Accessor srcAccessor)
         {
             var elementByteSize = DetermineByteSize(srcAccessor.ComponentType);
             var noOfComponents = DetermineNoOfComponents(srcAccessor.Type);
             var totalByteSize = (ulong)(elementByteSize * noOfComponents * srcAccessor.Count);
 
-            return new GltfAccessor
+            return new MgtfAccessor
             {
                 BufferView = srcAccessor.BufferView,
                 ViewOffset = srcAccessor.ByteOffset,
@@ -310,26 +310,51 @@ namespace Neutrino.UnitTests
 
         #region ExtractBufferViews methods
 
-        private static GltfBufferView[] ExtractBufferViews(BufferView[] bufferViews)
+        private static MgtfBufferView[] ExtractBufferViews(BufferView[] bufferViews)
         {
             var noOfItems = bufferViews != null ? bufferViews.Length : 0;
-            var output = new GltfBufferView[noOfItems];
+            var output = new MgtfBufferView[noOfItems];
             for (var i = 0; i < noOfItems; i += 1)
             {
-                output[i] = new GltfBufferView(bufferViews[i]);
+                output[i] = ExtractBufferView(bufferViews[i]);
             }
             return output;
+        }
+
+        private static MgtfBufferView ExtractBufferView(BufferView src)
+        {
+            return new MgtfBufferView
+            {
+                BufferIndex = src.Buffer,
+                ByteStride = src.ByteStride,
+                BufferOffset = src.ByteOffset,
+                ByteLength = src.ByteLength,
+                Usage = DetrimineUsage(src),
+            };
+        }
+
+        private static MgBufferUsageFlagBits DetrimineUsage(BufferView src)
+        {
+            switch (src.Target)
+            {
+                case glTFLoader.Schema.BufferView.TargetEnum.ARRAY_BUFFER:
+                    return MgBufferUsageFlagBits.VERTEX_BUFFER_BIT;
+                case glTFLoader.Schema.BufferView.TargetEnum.ELEMENT_ARRAY_BUFFER:
+                    return MgBufferUsageFlagBits.INDEX_BUFFER_BIT;
+                default:
+                    throw new NotSupportedException($"specified target:({src.Target}) not supported");
+            }
         }
 
         #endregion
 
         #region ExtractCameras methods 
 
-        private static GltfCamera[] ExtractCameras(Camera[] cameras)
+        private static MgtfCamera[] ExtractCameras(Camera[] cameras)
         {
             var count = cameras != null ? cameras.Length : 0;
 
-            var output = new GltfCamera[count];
+            var output = new MgtfCamera[count];
             for (var i = 0; i < count; i += 1)
             {
                 output[i] = ExtractNewCamera(cameras[i]);
@@ -337,7 +362,7 @@ namespace Neutrino.UnitTests
             return output;
         }
 
-        private static GltfCamera ExtractNewCamera(Camera camera)
+        private static MgtfCamera ExtractNewCamera(Camera camera)
         {
             double m_0_0 = 0;
             double m_1_1 = 0;
@@ -403,11 +428,11 @@ namespace Neutrino.UnitTests
             };
 
 
-            return new GltfCamera
+            return new MgtfCamera
             {
                 ProjectionType = (camera.Type == Camera.TypeEnum.orthographic)
-                    ? GltfCamera.CameraType.Orthogonal
-                    : GltfCamera.CameraType.Perspective,
+                    ? MgtfCameraType.Orthogonal
+                    : MgtfCameraType.Perspective,
                 AspectRatio = aspectRatio,
                 Values = values,
             };
@@ -417,11 +442,11 @@ namespace Neutrino.UnitTests
 
         #region ExtractMaterials methods 
 
-        private static GltfMaterial[] ExtractMaterials(Material[] materials)
+        private static MgtfMaterial[] ExtractMaterials(Material[] materials)
         {
             var count = materials != null ? materials.Length : 0;
 
-            var output = new GltfMaterial[count];
+            var output = new MgtfMaterial[count];
             for (var i = 0; i < count; i += 1)
             {
                 output[i] = ExtractNewMaterial(materials[i]);
@@ -429,9 +454,9 @@ namespace Neutrino.UnitTests
             return output;
         }
 
-        public static GltfMaterial ExtractNewMaterial(Material src)
+        public static MgtfMaterial ExtractNewMaterial(Material src)
         {
-            GltfMaterial.GltfMaterialTexture BaseColorTexture = null;
+            MgtfMaterialTexture BaseColorTexture = null;
             var baseColorFactor = new MgVec4f(1f, 1f, 1f, 1f);
             if (src.PbrMetallicRoughness != null)
             {
@@ -445,7 +470,7 @@ namespace Neutrino.UnitTests
 
                 if (src.PbrMetallicRoughness.BaseColorTexture != null)
                 {
-                    BaseColorTexture = new GltfMaterial.GltfMaterialTexture
+                    BaseColorTexture = new MgtfMaterialTexture
                     {
                         Texture = src.PbrMetallicRoughness.BaseColorTexture.Index,
                         TexCoords = src.PbrMetallicRoughness.BaseColorTexture.TexCoord,
@@ -453,11 +478,11 @@ namespace Neutrino.UnitTests
                 }
             }
 
-            GltfMaterial.GltfMaterialTexture NormalTexture = null;
+            MgtfMaterialTexture NormalTexture = null;
             float normalScale = 1f;
             if (src.NormalTexture != null)
             {
-                NormalTexture = new GltfMaterial.GltfMaterialTexture
+                NormalTexture = new MgtfMaterialTexture
                 {
                     Texture = src.NormalTexture.Index,
                     TexCoords = src.NormalTexture.TexCoord,
@@ -465,10 +490,10 @@ namespace Neutrino.UnitTests
                 normalScale = src.NormalTexture.Scale;
             }
 
-            GltfMaterial.GltfMaterialTexture EmissiveTexture = null;
+            MgtfMaterialTexture EmissiveTexture = null;
             if (src.EmissiveTexture != null)
             {
-                EmissiveTexture = new GltfMaterial.GltfMaterialTexture
+                EmissiveTexture = new MgtfMaterialTexture
                 {
                     Texture = src.EmissiveTexture.Index,
                     TexCoords = src.EmissiveTexture.TexCoord,
@@ -486,11 +511,11 @@ namespace Neutrino.UnitTests
                 };
             }
 
-            GltfMaterial.GltfMaterialTexture OcclusionTexture = null;
+            MgtfMaterialTexture OcclusionTexture = null;
             float strength = 1f;
             if (src.OcclusionTexture != null)
             {
-                OcclusionTexture = new GltfMaterial.GltfMaterialTexture
+                OcclusionTexture = new MgtfMaterialTexture
                 {
                     Texture = src.OcclusionTexture.Index,
                     TexCoords = src.OcclusionTexture.TexCoord,
@@ -498,7 +523,7 @@ namespace Neutrino.UnitTests
                 strength = src.OcclusionTexture.Strength;
             }
 
-            return new GltfMaterial
+            return new MgtfMaterial
             {
                 DoubleSided = src.DoubleSided,
                 AlphaCutoff = src.AlphaCutoff,
@@ -515,26 +540,26 @@ namespace Neutrino.UnitTests
         }
 
 
-        private static GltfMaterial.AlphaModeEquation ExtractAlphaMode(Material.AlphaModeEnum alphaMode)
+        private static MgtfAlphaModeEquation ExtractAlphaMode(Material.AlphaModeEnum alphaMode)
         {
             switch (alphaMode)
             {
                 case Material.AlphaModeEnum.BLEND:
-                    return new GltfMaterial.AlphaModeEquation
+                    return new MgtfAlphaModeEquation
                     {
                         A = 0f,
                         B = 0f,
                         C = 1f,
                     };
                 case Material.AlphaModeEnum.MASK:
-                    return new GltfMaterial.AlphaModeEquation
+                    return new MgtfAlphaModeEquation
                     {
                         A = 0f,
                         B = 1f,
                         C = 0f,
                     };
                 case Material.AlphaModeEnum.OPAQUE:
-                    return new GltfMaterial.AlphaModeEquation
+                    return new MgtfAlphaModeEquation
                     {
                         A = 1f,
                         B = 0f,
@@ -550,10 +575,10 @@ namespace Neutrino.UnitTests
 
         #region ExtractMeshes methods 
 
-        private static GltfMesh[] ExtractMeshes(Mesh[] meshes, GltfAccessor[] accessors)
+        private static MgtfMesh[] ExtractMeshes(Mesh[] meshes, MgtfAccessor[] accessors)
         {
             var noOfItems = meshes != null ? meshes.Length : 0;
-            var output = new GltfMesh[noOfItems];
+            var output = new MgtfMesh[noOfItems];
 
             for (var i = 0; i < noOfItems; i += 1)
             {
@@ -562,9 +587,9 @@ namespace Neutrino.UnitTests
             return output;
         }
 
-        private static GltfMesh ExtractNewMesh(Mesh mesh, GltfAccessor[] accessors)
+        private static MgtfMesh ExtractNewMesh(Mesh mesh, MgtfAccessor[] accessors)
         {
-            return new GltfMesh
+            return new MgtfMesh
             {
                 Name = mesh.Name,
                 Weights = mesh.Weights,
@@ -572,12 +597,12 @@ namespace Neutrino.UnitTests
             };
         }
 
-        private static GltfMeshPrimitive[] InitializePrimitives(
+        private static MgtfMeshPrimitive[] InitializePrimitives(
             Mesh mesh,
-            GltfAccessor[] accessors)
+            MgtfAccessor[] accessors)
         {
             var noOfItems = mesh.Primitives != null ? mesh.Primitives.Length : 0;
-            var output = new GltfMeshPrimitive[noOfItems];
+            var output = new MgtfMeshPrimitive[noOfItems];
 
             for (var i = 0; i < noOfItems; i += 1)
             {
@@ -590,7 +615,7 @@ namespace Neutrino.UnitTests
                     vertexLocations,
                     accessors);
 
-                var temp = new GltfMeshPrimitive
+                var temp = new MgtfMeshPrimitive
                 {
                     Topology = DetermineTopology(srcPrimitive.Mode),
                     VertexLocations = vertexLocations,
@@ -633,11 +658,11 @@ namespace Neutrino.UnitTests
 
         #region ExtractSamplers methods
 
-        private static GltfSampler[] ExtractSamplers(Sampler[] samplers)
+        private static MgtfSampler[] ExtractSamplers(Sampler[] samplers)
         {
             var noOfSamplers = samplers != null ? samplers.Length : 0;
 
-            var output = new GltfSampler[noOfSamplers];
+            var output = new MgtfSampler[noOfSamplers];
             for (var i = 0; i < noOfSamplers; i += 1)
             {
                 output[i] = ExtractNewSampler(samplers[i]);
@@ -645,9 +670,9 @@ namespace Neutrino.UnitTests
             return output;
         }
 
-        private static GltfSampler ExtractNewSampler(Sampler src)
+        private static MgtfSampler ExtractNewSampler(Sampler src)
         {
-            return new GltfSampler
+            return new MgtfSampler
             {
                 AddressModeU = GetAddressModeU(src.WrapS),
                 AddressModeV = GetAddressModeV(src.WrapT),
@@ -761,11 +786,11 @@ namespace Neutrino.UnitTests
 
         #region ExtractTextures methods 
 
-        private static GltfTexture[] ExtractTextures(Texture[] textures)
+        private static MgtfTexture[] ExtractTextures(Texture[] textures)
         {
             var noOfSamplers = textures != null ? textures.Length : 0;
 
-            var output = new GltfTexture[noOfSamplers];
+            var output = new MgtfTexture[noOfSamplers];
             for (var i = 0; i < noOfSamplers; i += 1)
             {
                 output[i] = ExtractNewTexture(textures[i]);
@@ -773,9 +798,9 @@ namespace Neutrino.UnitTests
             return output;
         }
 
-        private static GltfTexture ExtractNewTexture(Texture texture)
+        private static MgtfTexture ExtractNewTexture(Texture texture)
         {
-            return new GltfTexture
+            return new MgtfTexture
             {
                 Image = texture.Source,
                 Sampler = texture.Sampler,

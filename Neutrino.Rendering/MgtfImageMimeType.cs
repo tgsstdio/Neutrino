@@ -1,6 +1,6 @@
 ﻿namespace Neutrino
 {
-    public enum GltfImageMimeType
+    public enum MgtfImageMimeType
     {
         None,
         JPEG,

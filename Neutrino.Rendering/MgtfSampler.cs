@@ -1,8 +1,8 @@
 ﻿using Magnesium;
 
-namespace Neutrino.UnitTests
+namespace Neutrino
 {
-    public class GltfSampler
+    public class MgtfSampler
     {
         public MgSamplerAddressMode AddressModeU { get; set; }
         public MgSamplerAddressMode AddressModeV { get; set; }

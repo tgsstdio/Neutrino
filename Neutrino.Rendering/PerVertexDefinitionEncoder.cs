@@ -44,7 +44,7 @@ namespace Neutrino
         }
 
 
-        public static PerVertexDefinition Extract(IPerVertexDataLocator locator, GltfAccessor[] accessors)
+        public static PerVertexDefinition Extract(IMgtfPerVertexDataLocator locator, MgtfAccessor[] accessors)
         {
             return new PerVertexDefinition
             {
@@ -64,7 +64,7 @@ namespace Neutrino
         }
 
         private static PerVertexIndexType ExtractIndexType(int? indices,
-            GltfAccessor[] accessors)
+            MgtfAccessor[] accessors)
         {
             if (indices.HasValue)
             {
@@ -91,8 +91,8 @@ namespace Neutrino
         }
 
         private static PerVertexPositionType ExtractPosition(
-            IPerVertexDataLocator locator,
-            GltfAccessor[] accessors)
+            IMgtfPerVertexDataLocator locator,
+            MgtfAccessor[] accessors)
         {
             if (locator.Position.HasValue)
             {
@@ -144,8 +144,8 @@ namespace Neutrino
             }
         }
 
-        private static PerVertexNormalType ExtractNormals(IPerVertexDataLocator locator,
-            GltfAccessor[] accessors)
+        private static PerVertexNormalType ExtractNormals(IMgtfPerVertexDataLocator locator,
+            MgtfAccessor[] accessors)
         {
             if (locator.Normal.HasValue)
             {
@@ -176,8 +176,8 @@ namespace Neutrino
             }
         }
 
-        private static PerVertexTangentType ExtractTangents(IPerVertexDataLocator locator,
-            GltfAccessor[] accessors)
+        private static PerVertexTangentType ExtractTangents(IMgtfPerVertexDataLocator locator,
+            MgtfAccessor[] accessors)
         {
             if (locator.Tangent.HasValue)
             {
@@ -209,7 +209,7 @@ namespace Neutrino
         }
 
         private static PerVertexTexCoordsType ExtractTexCoords(int? texCoords,
-            GltfAccessor[] accessors)
+            MgtfAccessor[] accessors)
         {
             if (texCoords.HasValue)
             {
@@ -289,7 +289,7 @@ namespace Neutrino
         }
 
         private static PerVertexWeightsType ExtractWeights(int? weights,
-            GltfAccessor[] accessors)
+            MgtfAccessor[] accessors)
         {
             if (weights.HasValue)
             {
@@ -341,7 +341,7 @@ namespace Neutrino
         }
 
         private static PerVertexColorType ExtractColor(int? color,
-            GltfAccessor[] accessors)
+            MgtfAccessor[] accessors)
         {
             if (color.HasValue)
             {
@@ -408,7 +408,7 @@ namespace Neutrino
         }
 
         private static PerVertexJointType ExtractJoints(int? joints,
-            GltfAccessor[] accessors)
+            MgtfAccessor[] accessors)
         {
             if (joints.HasValue)
             {
