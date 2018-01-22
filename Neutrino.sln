@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neutrino.Library", "Neutrin
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TriangleDemo", "TriangleDemo\TriangleDemo.csproj", "{77F353B3-BF3F-4856-9322-E82249391D4E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FreeImageTestDemo", "FreeImageTestDemo\FreeImageTestDemo.csproj", "{68DC3C70-0D4C-4446-9B37-91DE8AE12921}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{77F353B3-BF3F-4856-9322-E82249391D4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{77F353B3-BF3F-4856-9322-E82249391D4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{77F353B3-BF3F-4856-9322-E82249391D4E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{68DC3C70-0D4C-4446-9B37-91DE8AE12921}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68DC3C70-0D4C-4446-9B37-91DE8AE12921}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68DC3C70-0D4C-4446-9B37-91DE8AE12921}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68DC3C70-0D4C-4446-9B37-91DE8AE12921}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

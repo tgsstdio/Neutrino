@@ -8,8 +8,9 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>TriangleDemo</RootNamespace>
     <AssemblyName>TriangleDemo</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -31,6 +32,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="FreeImageNET-PCL, Version=3.17.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\FreeImageNET-PCL.3.17.1\lib\portable45-net45+win8+wpa81\FreeImageNET-PCL.dll</HintPath>
+    </Reference>
     <Reference Include="Magnesium, Version=7.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Magnesium.7.0.0-alpha\lib\portable45-net45+win8+wpa81\Magnesium.dll</HintPath>
     </Reference>
@@ -67,14 +71,46 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="Data\pbr.frag">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\pbr.vert">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Triangle.gltf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\triangleWithoutIndices.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\TriangleWithoutIndices.gltf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="OpenTK.dll.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\glTFLoader\glTFLoader.csproj">
+      <Project>{c2f2e13b-594f-4592-a2d4-f44bbce65f90}</Project>
+      <Name>glTFLoader</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\glTFLoader_Shared\glTFLoader_Shared.csproj">
+      <Project>{976ef0aa-4835-4b60-88b8-bf2fa02b571c}</Project>
+      <Name>glTFLoader_Shared</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Magnesium.Utilities\Magnesium.Utilities.csproj">
       <Project>{CB108602-E69B-4FA1-922A-096A4D1F349F}</Project>
       <Name>Magnesium.Utilities</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Neutrino.Rendering\Neutrino.Library.csproj">
+      <Project>{bb6b2256-1b5e-4f9d-b674-a2c709baf14d}</Project>
+      <Name>Neutrino.Library</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="FreeImage.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

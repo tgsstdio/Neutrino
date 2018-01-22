@@ -29,11 +29,13 @@ namespace Neutrino.UnitTests
         public void LoadFile()
         {
             var loader = new Loader();
+            var dataLoader = new DataLoader();
 
             using (var fs = File.Open("Data/Triangle.gltf", FileMode.Open))
             {
                 var model = glTFLoader.Interface.LoadModel(fs);
                 var actual = loader.LoadMetaData(model);
+                var data = dataLoader.LoadData(".",model);
                 Assert.IsNotNull(actual);
             }
         }

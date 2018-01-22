@@ -2,7 +2,7 @@
 using Magnesium;
 using System;
 
-namespace Neutrino.UnitTests
+namespace Neutrino
 {
     public class Loader
     {
