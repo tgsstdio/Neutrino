@@ -1,5 +1,4 @@
-﻿using glTFLoader.Schema;
-using Magnesium;
+﻿using Magnesium;
 using Magnesium.Utilities;
 using Neutrino;
 using System;
@@ -8,8 +7,18 @@ using System.IO;
 
 namespace TriangleDemo
 {
-    internal class TriangleDemoApplication : IDemoApplication
+    internal class OffscreenDemoApplication : IDemoApplication
     {
+        private IMgImageSourceExaminer mImageExaminer;
+        private MgOptimizedStorageBuilder mBuilder;
+        private MgOptimizedStorageContainer mStaticStorage;
+
+        public OffscreenDemoApplication(IMgImageSourceExaminer examiner, MgOptimizedStorageBuilder builder)
+        {
+            mBuilder = builder;
+            mImageExaminer = examiner;
+        }
+
         public MgGraphicsDeviceCreateInfo Initialize()
         {
             return new MgGraphicsDeviceCreateInfo
@@ -52,84 +61,83 @@ namespace TriangleDemo
                 // allocate partitions for static data                
                 // mesh
                 var meshPrimitives = AllocateMeshes(staticRequest, metaData.Meshes, metaData.Accessors, metaData.BufferViews);
+
                 // images
-                var images = AllocateTextures(staticRequest, data.Images, metaData.Textures);
+                var images = ExamineImages(data.Images, data.Buffers);
 
                 // initialize static data storage 
+
+                var staticCreateInfo = new MgOptimizedStorageCreateInfo
+                {
+                   Allocations = staticRequest.ToArray(),
+                };
+
+                mStaticStorage = mBuilder.Build(staticCreateInfo);
 
                 // build static artifacts
                 // render target
                 // descriptor set layout + pipeline layout                
                 // pipeline     
 
+                // allocate dynamic data
+                // lights 
+                // materials
+                // cameras
+                // per instance data
+
+                // build dynamic artifacts
+                // semaphores 
+                // fences
+                // descriptor sets
+
+                // initialize dynamic data storage           
+
+                // copy data across
+                // buffers 
+                // images
+
+                // map dynamic data 
+
+                // build command buffers
             }
-
-            // allocate dynamic data
-            // lights 
-            // materials
-            // cameras
-            // per instance data
-
-            // build dynamic artifacts
-            // semaphores 
-            // fences
-            // descriptor sets
-
-            // initialize dynamic data storage           
-
-            // copy data across
-            // buffers 
-            // images
-
-            // map dynamic data 
-
-            // build command buffers
         }
 
-        public class MgtfImageViewLocation
+        private MgImageSource[] ExamineImages(MgtfImage[] images, MgtfBuffer[] buffers)
         {
-            public int StorageIndex { get; set; }
-        }
+            var locations = new List<MgImageSource>();
 
-        private object AllocateTextures(MgStorageBlockAllocationRequest staticRequest, MgtfImage[] images, MgtfTexture[] textures)
-        {
-            var locations = new List<MgtfImageViewLocation>();
-
-            foreach(var img in images)
+            foreach (var img in images)
             {
+                byte[] srcData = null;
+
+                int srcOffset = 0;
+                int srcLength = 0;
                 if (img.Source != null)
                 {
-                    using (var ms = new MemoryStream(img.Source))
-                    {
-                        FreeImageAPI.FREE_IMAGE_FORMAT format =
-                            (img.MimeType == MgtfImageMimeType.JPEG)
-                            ? FreeImageAPI.FREE_IMAGE_FORMAT.FIF_JPEG
-                            : FreeImageAPI.FREE_IMAGE_FORMAT.FIF_PNG;
-
-                        var dib = FreeImageAPI.FreeImage.LoadFromStream(ms, ref format);
-
-                        if (dib.IsNull)
-                        {
-                            throw new InvalidOperationException("Image data invalid");
-                        }
-
-                        var imageType = FreeImageAPI.FreeImage.GetImageType(dib);
-                        var bpp = FreeImageAPI.FreeImage.GetBPP(dib);
-                        var width = FreeImageAPI.FreeImage.GetWidth(dib);
-                        var height = FreeImageAPI.FreeImage.GetHeight(dib);
-
-                        MgImageSource src = new MgImageSource
-                        {
-                            
-                        };
-
-
-                        FreeImageAPI.FreeImage.UnloadEx(ref dib);
-                    }
+                    srcData = img.Source;
+                    srcOffset = 0;
+                    srcLength = img.Source.Length;
                 }
-            }
+                else
+                {
+                    if (!img.Buffer.HasValue)
+                    {
+                        throw new InvalidOperationException("");
+                    }
+                    var selectedBuffer = buffers[img.Buffer.Value];
+                    srcData = selectedBuffer.Data;
 
-            throw new NotImplementedException();
+                    srcOffset = (int) img.SrcOffset;
+                    srcLength = (int) img.SrcLength;
+                }
+
+                using (var ms = new MemoryStream(srcData, srcOffset, srcLength))
+                {
+                    var location = mImageExaminer.DetermineSource(ms);
+                    locations.Add(location);
+                }                
+            }
+            return locations.ToArray();
         }
 
         private GltfPrimitiveStorageLocation[] AllocateMeshes(
@@ -362,7 +370,10 @@ namespace TriangleDemo
 
         public void ReleaseUnmanagedResources(IMgGraphicsConfiguration configuration)
         {
-           
+            if (mStaticStorage != null)
+            {
+                mStaticStorage.Storage.Destroy(configuration.Device, null);
+            }
         }
 
         public IMgSemaphore[] Render(IMgQueue queue, uint layerNo, IMgSemaphore semaphore)

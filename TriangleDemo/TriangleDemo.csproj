@@ -49,6 +49,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -57,13 +58,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BitmapImageSourceExaminer.cs" />
     <Compile Include="DryIoc\AsyncExecutionFlowScopeContext.cs" />
     <Compile Include="DryIoc\Container.cs" />
     <Compile Include="DryIoc\FastExpressionCompiler.cs" />
     <Compile Include="DryIoc\ImTools.cs" />
     <Compile Include="Example.cs" />
+    <Compile Include="FreeImageSourceExaminer.cs" />
     <Compile Include="GameWindow.cs" />
     <Compile Include="IDemoApplication.cs" />
+    <Compile Include="IMgImageSourceExaminer.cs" />
     <Compile Include="MgGraphicsConfigurationManager.cs" />
     <Compile Include="OffscreenDemoApplication.cs" />
     <Compile Include="Program.cs" />

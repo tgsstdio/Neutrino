@@ -40,7 +40,9 @@ namespace TriangleDemo
                         // GAME START
                         scope.Register<Example>(Reuse.InCurrentScope);
 
-                        scope.Register<IDemoApplication, TriangleDemoApplication>(Reuse.InCurrentScope);
+                        scope.Register<IDemoApplication, OffscreenDemoApplication>(Reuse.InCurrentScope);
+                        scope.Register<IMgImageSourceExaminer, FreeImageSourceExaminer>(Reuse.InCurrentScope);
+
                         //container.Register<IDemoApplication, TriangleDemoApplication>(new PerScopeLifetime());
 
                         scope.Register<IMgPlatformMemoryLayout, VkPlatformMemoryLayout>(Reuse.InCurrentScope);
