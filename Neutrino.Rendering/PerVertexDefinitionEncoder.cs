@@ -69,11 +69,11 @@ namespace Neutrino
             if (indices.HasValue)
             {
                 var selected = accessors[indices.Value];
-                if (selected.ElementType == GltfElementType.Uint)
+                if (selected.ElementType == MgtfElementType.Uint)
                 {
                     return PerVertexIndexType.Uint32;
                 }
-                else if (selected.ElementType == GltfElementType.Ushort)
+                else if (selected.ElementType == MgtfElementType.Ushort)
                 {
                     return PerVertexIndexType.Uint16;
                 }
@@ -100,7 +100,7 @@ namespace Neutrino
 
                 bool isInvalid = true;
                 var result = PerVertexPositionType.None;
-                if (selected.ElementType == GltfElementType.Float)
+                if (selected.ElementType == MgtfElementType.Float)
                 {
                     if (selected.NoOfComponents == 3)
                     {
@@ -113,7 +113,7 @@ namespace Neutrino
                         isInvalid = false;
                     }
                 }
-                else if (selected.ElementType == GltfElementType.Half)
+                else if (selected.ElementType == MgtfElementType.Half)
                 {
                     if (selected.NoOfComponents == 3)
                     {
@@ -151,11 +151,11 @@ namespace Neutrino
             {
                 var selected = accessors[locator.Normal.Value];
                 var result = PerVertexNormalType.None;
-                if (selected.ElementType == GltfElementType.Float && selected.NoOfComponents == 3)
+                if (selected.ElementType == MgtfElementType.Float && selected.NoOfComponents == 3)
                 {
                     result = PerVertexNormalType.Float3;
                 }
-                else if (selected.ElementType == GltfElementType.Half && selected.NoOfComponents == 3)
+                else if (selected.ElementType == MgtfElementType.Half && selected.NoOfComponents == 3)
                 {
                     result = PerVertexNormalType.Half3;
                 }
@@ -184,11 +184,11 @@ namespace Neutrino
                 var selected = accessors[locator.Tangent.Value];
 
                 var result = PerVertexTangentType.None;
-                if (selected.ElementType == GltfElementType.Float && selected.NoOfComponents == 4)
+                if (selected.ElementType == MgtfElementType.Float && selected.NoOfComponents == 4)
                 {
                     result = PerVertexTangentType.Float4;
                 }
-                else if (selected.ElementType == GltfElementType.Half && selected.NoOfComponents == 4)
+                else if (selected.ElementType == MgtfElementType.Half && selected.NoOfComponents == 4)
                 {
                     result = PerVertexTangentType.Half4;
                 }
@@ -218,7 +218,7 @@ namespace Neutrino
                 bool isInvalid = true;
                 var result = PerVertexTexCoordsType.None;
 
-                if (selected.ElementType == GltfElementType.Float)
+                if (selected.ElementType == MgtfElementType.Float)
                 {
                     if (selected.NoOfComponents == 2)
                     {
@@ -231,7 +231,7 @@ namespace Neutrino
                         isInvalid = false;
                     }
                 }
-                else if (selected.ElementType == GltfElementType.ByteNorm)
+                else if (selected.ElementType == MgtfElementType.ByteNorm)
                 {
                     if (selected.NoOfComponents == 2)
                     {
@@ -244,7 +244,7 @@ namespace Neutrino
                         isInvalid = false;
                     }
                 }
-                else if (selected.ElementType == GltfElementType.UshortNorm)
+                else if (selected.ElementType == MgtfElementType.UshortNorm)
                 {
                     if (selected.NoOfComponents == 2)
                     {
@@ -257,7 +257,7 @@ namespace Neutrino
                         isInvalid = false;
                     }
                 }
-                else if (selected.ElementType == GltfElementType.Half)
+                else if (selected.ElementType == MgtfElementType.Half)
                 {
                     if (selected.NoOfComponents == 2)
                     {
@@ -298,7 +298,7 @@ namespace Neutrino
                 bool isInvalid = true;
                 var result = PerVertexWeightsType.None;
 
-                if (selected.ElementType == GltfElementType.Float)
+                if (selected.ElementType == MgtfElementType.Float)
                 {
                     if (selected.NoOfComponents == 4)
                     {
@@ -306,7 +306,7 @@ namespace Neutrino
                         isInvalid = false;
                     }
                 }
-                else if (selected.ElementType == GltfElementType.ByteNorm)
+                else if (selected.ElementType == MgtfElementType.ByteNorm)
                 {
                     if (selected.NoOfComponents == 4)
                     {
@@ -314,7 +314,7 @@ namespace Neutrino
                         isInvalid = false;
                     }
                 }
-                else if (selected.ElementType == GltfElementType.UshortNorm)
+                else if (selected.ElementType == MgtfElementType.UshortNorm)
                 {
                     if (selected.NoOfComponents == 4)
                     {
@@ -350,7 +350,7 @@ namespace Neutrino
                 bool isInvalid = true;
                 var result = PerVertexColorType.None;
 
-                if (selected.ElementType == GltfElementType.Float)
+                if (selected.ElementType == MgtfElementType.Float)
                 {
                     if (selected.NoOfComponents == 3)
                     {
@@ -363,7 +363,7 @@ namespace Neutrino
                         isInvalid = false;
                     }
                 }
-                else if (selected.ElementType == GltfElementType.ByteNorm)
+                else if (selected.ElementType == MgtfElementType.ByteNorm)
                 {
                     if (selected.NoOfComponents == 3)
                     {
@@ -376,7 +376,7 @@ namespace Neutrino
                         isInvalid = false;
                     }
                 }
-                else if (selected.ElementType == GltfElementType.UshortNorm)
+                else if (selected.ElementType == MgtfElementType.UshortNorm)
                 {
                     if (selected.NoOfComponents == 3)
                     {
@@ -417,7 +417,7 @@ namespace Neutrino
                 bool isInvalid = true;
                 var result = PerVertexJointType.None;
 
-                if (selected.ElementType == GltfElementType.Byte)
+                if (selected.ElementType == MgtfElementType.Byte)
                 {
                     if (selected.NoOfComponents == 4)
                     {
@@ -425,7 +425,7 @@ namespace Neutrino
                         isInvalid = false;
                     }
                 }
-                else if (selected.ElementType == GltfElementType.UshortNorm)
+                else if (selected.ElementType == MgtfElementType.UshortNorm)
                 {
                     if (selected.NoOfComponents == 4)
                     {

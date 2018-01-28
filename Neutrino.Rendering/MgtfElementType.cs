@@ -1,6 +1,6 @@
 ﻿namespace Neutrino
 {
-    public enum GltfElementType
+    public enum MgtfElementType
     {
         Half,
         Float,

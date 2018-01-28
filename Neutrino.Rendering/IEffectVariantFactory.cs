@@ -2,7 +2,7 @@
 
 namespace Neutrino
 {
-    interface IEffectVariantFactory
+    public interface IEffectVariantFactory
     {
         EffectVariant Initialize(
             IMgDevice device,

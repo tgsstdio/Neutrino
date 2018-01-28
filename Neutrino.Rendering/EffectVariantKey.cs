@@ -6,9 +6,16 @@ namespace Neutrino
     {
         public uint Definition { get; set; }
         public uint Options { get; set; }
+        public int Effect { get; set; }
 
         public int CompareTo(EffectVariantKey other)
         {
+            if (Effect < other.Effect)
+                return -1;
+
+            if (Effect > other.Effect)
+                return 1;
+
             if (Definition < other.Definition)
                 return -1;
 
@@ -29,6 +36,7 @@ namespace Neutrino
             unchecked
             {
                 var hash = 13;
+                hash = (7 * hash) + Effect.GetHashCode();
                 hash = (7 * hash) + Definition.GetHashCode();
                 hash = (7 * hash) + Options.GetHashCode();
                 return hash;

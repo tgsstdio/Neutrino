@@ -4,12 +4,109 @@ using System.Diagnostics;
 
 namespace Neutrino
 {
+    public class PbrEffectSettings
+    {
+        public uint NoOfCamerasPerGroup { get; set; }
+        public uint NoOfLightsPerGroup { get; set; }
+        public uint NoOfMaterialsPerGroup { get; internal set; }
+        public uint NoOfTexturesPerGroup { get; internal set; }
+    }
+
+    public class EffectLayout
+    {
+        public EffectLayout(
+            IMgDescriptorSetLayout descriptorSetLayout,
+            IMgPipelineLayout layout
+        )
+        {
+            DescriptorSetLayout = descriptorSetLayout;
+            Layout = layout;
+        }
+
+        public IMgDescriptorSetLayout DescriptorSetLayout { get; }
+        public IMgPipelineLayout Layout { get; }
+
+        public void Destroy(IMgDevice device)
+        {
+            if (Layout != null)
+            {
+                Layout.DestroyPipelineLayout(device, null);
+            }
+
+            if (DescriptorSetLayout != null)
+            {
+                DescriptorSetLayout.DestroyDescriptorSetLayout(device, null);
+            }
+        }
+    }
+
     public class PbrEffectVariantFactory : IEffectVariantFactory
     {
         private IPbrEffectPath mPath;
-        public PbrEffectVariantFactory(IPbrEffectPath path)
+        private PbrEffectSettings mSettings;
+        public PbrEffectVariantFactory(IPbrEffectPath path, PbrEffectSettings settings)
         {
             mPath = path;
+        }
+
+        public EffectLayout CreateEffectLayout(IMgDevice device)
+        {
+            var pDsCreateInfo = new MgDescriptorSetLayoutCreateInfo
+            {
+                Bindings = new[]
+                {
+                    // CAMERA
+                    new MgDescriptorSetLayoutBinding
+                    {
+                        Binding = 0,
+                        DescriptorType = MgDescriptorType.UNIFORM_BUFFER,
+                        DescriptorCount = mSettings.NoOfCamerasPerGroup,
+                        StageFlags = MgShaderStageFlagBits.VERTEX_BIT,
+                    },
+                    // LIGHTS
+                    new MgDescriptorSetLayoutBinding
+                    {
+                        Binding = 1,
+                        DescriptorType = MgDescriptorType.UNIFORM_BUFFER,
+                        DescriptorCount = mSettings.NoOfLightsPerGroup,
+                        StageFlags = MgShaderStageFlagBits.VERTEX_BIT,
+                    },
+                    // MATERIALS
+                    new MgDescriptorSetLayoutBinding
+                    {
+                        Binding = 2,
+                        DescriptorType = MgDescriptorType.UNIFORM_BUFFER,
+                        DescriptorCount = mSettings.NoOfMaterialsPerGroup,
+                        StageFlags = MgShaderStageFlagBits.FRAGMENT_BIT,
+                    },
+                    // TEXTURES
+                    new MgDescriptorSetLayoutBinding
+                    {
+                        Binding = 3,
+                        DescriptorType = MgDescriptorType.COMBINED_IMAGE_SAMPLER,
+                        DescriptorCount = mSettings.NoOfTexturesPerGroup,
+                        StageFlags = MgShaderStageFlagBits.FRAGMENT_BIT,
+                    },
+                }
+            };
+
+            var err = device.CreateDescriptorSetLayout(pDsCreateInfo, null, out IMgDescriptorSetLayout dsLayout);
+            if (err != Result.SUCCESS)
+                throw new InvalidOperationException("CreateDescriptorSetLayout failed");
+
+            var pCreateInfo = new MgPipelineLayoutCreateInfo
+            {
+                SetLayouts = new[]
+                {
+                    dsLayout,
+                }
+            };
+
+            err = device.CreatePipelineLayout(pCreateInfo, null, out IMgPipelineLayout layout);
+            if (err != Result.SUCCESS)
+                throw new InvalidOperationException("CreatePipelineLayout failed");
+
+            return new EffectLayout(dsLayout, layout);
         }
 
         public EffectVariant Initialize(

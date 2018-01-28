@@ -9,5 +9,6 @@ namespace Neutrino
         public int? Material { get; set; }
         public uint VertexCount { get; set; }
         public IMgtfPerVertexDataLocator VertexLocations { get; set; }
+        public uint IndexCount { get; set; }
     }
 }

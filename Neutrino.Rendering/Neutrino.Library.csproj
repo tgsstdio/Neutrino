@@ -65,7 +65,7 @@
     <Compile Include="MgtfBuffer.cs" />
     <Compile Include="MgtfBufferView.cs" />
     <Compile Include="GltfCombinedImageSampler.cs" />
-    <Compile Include="GltfElementType.cs" />
+    <Compile Include="MgtfElementType.cs" />
     <Compile Include="MgtfCamera.cs" />
     <Compile Include="MgtfCameraType.cs" />
     <Compile Include="MgtfImage.cs" />

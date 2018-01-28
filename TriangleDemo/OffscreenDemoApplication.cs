@@ -12,11 +12,13 @@ namespace TriangleDemo
         private IMgImageSourceExaminer mImageExaminer;
         private MgOptimizedStorageBuilder mBuilder;
         private MgOptimizedStorageContainer mStaticStorage;
+        private PbrEffectVariantFactory mPbrFactory;
 
-        public OffscreenDemoApplication(IMgImageSourceExaminer examiner, MgOptimizedStorageBuilder builder)
+        public OffscreenDemoApplication(IMgImageSourceExaminer examiner, MgOptimizedStorageBuilder builder, PbrEffectVariantFactory pbrFactory)
         {
             mBuilder = builder;
             mImageExaminer = examiner;
+            mPbrFactory = pbrFactory;
         }
 
         public MgGraphicsDeviceCreateInfo Initialize()
@@ -47,6 +49,7 @@ namespace TriangleDemo
         {
             var loader = new Loader();
             var dataLoader = new DataLoader();
+            var device = configuration.Device;
 
             using (var fs = File.Open("Data/Triangle.gltf", FileMode.Open))
             {
@@ -76,7 +79,9 @@ namespace TriangleDemo
 
                 // build static artifacts
                 // render target
-                // descriptor set layout + pipeline layout                
+                // descriptor set layout + pipeline layout   
+                var effectPool = mPbrFactory.CreateEffectLayout(configuration.Device);
+
                 // pipeline     
 
                 // allocate dynamic data

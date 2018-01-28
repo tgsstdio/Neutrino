@@ -2,7 +2,7 @@
 
 namespace Neutrino
 {
-    class Effect
+    public class Effect
     {
         public IMgDescriptorSetLayout DescriptorSetLayout { get; set; }
         public IMgPipelineLayout Layout { get; set; }

@@ -152,22 +152,22 @@ namespace Neutrino
             };
         }
 
-        private static GltfElementType DetermineElementType(Accessor.ComponentTypeEnum componentType)
+        private static MgtfElementType DetermineElementType(Accessor.ComponentTypeEnum componentType)
         {
             switch (componentType)
             {
                 case Accessor.ComponentTypeEnum.BYTE:
-                    return GltfElementType.SByte;
+                    return MgtfElementType.SByte;
                 case Accessor.ComponentTypeEnum.UNSIGNED_BYTE:
-                    return GltfElementType.Byte;
+                    return MgtfElementType.Byte;
                 case Accessor.ComponentTypeEnum.SHORT:
-                    return GltfElementType.Short;
+                    return MgtfElementType.Short;
                 case Accessor.ComponentTypeEnum.UNSIGNED_SHORT:
-                    return GltfElementType.Ushort;
+                    return MgtfElementType.Ushort;
                 case Accessor.ComponentTypeEnum.UNSIGNED_INT:
-                    return GltfElementType.Uint;
+                    return MgtfElementType.Uint;
                 case Accessor.ComponentTypeEnum.FLOAT:
-                    return GltfElementType.Float;
+                    return MgtfElementType.Float;
                 default:
                     throw new NotSupportedException();
             }
@@ -624,7 +624,11 @@ namespace Neutrino
                     VertexCount =
                         vertexLocations.Position.HasValue
                         ? (uint)accessors[vertexLocations.Position.Value].ElementCount
-                        : 0U
+                        : 0U,
+                    IndexCount = 
+                        vertexLocations.Indices.HasValue
+                        ? (uint)accessors[vertexLocations.Indices.Value].ElementCount
+                        : 0U,
                 };
 
                 output[i] = temp;
