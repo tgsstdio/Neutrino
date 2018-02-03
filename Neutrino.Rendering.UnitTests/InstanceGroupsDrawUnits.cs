@@ -79,83 +79,6 @@ namespace Neutrino.UnitTests
             var pass1 = new EffectPass { Name = "pbrPass" };
         }
 
-        class PerTextureStorageInfo
-        {
-            public uint ElementRange { get; set; }
-            public MgBufferUsageFlagBits Usage { get; set; }
-            public ulong MinimumAlignment { get; set; }
-            public ulong Size { get; set; }
-        }
-
-        // REPLACEMENT FOR PRE-TRANSFORMS IN OPTIMAL STORAGE
-        class PerTextureStorageQuery
-        {
-            private MgPhysicalDeviceProperties mProperties;
-            public PerTextureStorageQuery(MgPhysicalDeviceProperties properties)
-            {
-                mProperties = properties;
-            }
-
-            public MgBufferUsageFlagBits GetMaterialUsage()
-            {
-                if (
-                    mProperties.Limits.MaxPerStageDescriptorStorageBuffers > 0
-                    // SHOULD ALWAYS BE TRUE 
-                    && mProperties.Limits.MaxUniformBufferRange < mProperties.Limits.MaxStorageBufferRange
-                    )
-                {
-                    return MgBufferUsageFlagBits.STORAGE_BUFFER_BIT;
-                }
-                else
-                {
-                    if (mProperties.Limits.MaxPerStageDescriptorUniformBuffers == 0)
-                        throw new InvalidOperationException("both storage and uniform buffers are unavailable");
-
-                    return MgBufferUsageFlagBits.UNIFORM_BUFFER_BIT;
-                }
-            }
-
-            public uint GetNoOfMaterials(
-                MgBufferUsageFlagBits usage,
-                uint texturesPerMaterial,
-                uint sizeOfBlock
-            )
-            {
-                var countPerMaxTextures =
-                    mProperties.Limits.MaxPerStageDescriptorSampledImages 
-                    / texturesPerMaterial;
-
-                var maxBufferSize =
-                    (usage == MgBufferUsageFlagBits.STORAGE_BUFFER_BIT)
-                    ? mProperties.Limits.MaxStorageBufferRange
-                    : mProperties.Limits.MaxUniformBufferRange;
-
-                var countPerBlockSize =
-                    maxBufferSize / sizeOfBlock;
-
-                return Math.Min(countPerBlockSize, countPerMaxTextures);
-            }
-
-            public PerTextureStorageInfo GetInfo(
-                uint texturesPerMaterial,
-                uint sizeOfBlock)
-            {
-                var usage = GetMaterialUsage();
-                var elementCount = GetNoOfMaterials(usage, texturesPerMaterial, sizeOfBlock);
-                var minAlignment = (usage == MgBufferUsageFlagBits.STORAGE_BUFFER_BIT)
-                    ? mProperties.Limits.MinStorageBufferOffsetAlignment
-                    : mProperties.Limits.MinUniformBufferOffsetAlignment;
-
-                return new PerTextureStorageInfo
-                {
-                    Usage = usage,
-                    ElementRange = elementCount,
-                    MinimumAlignment = minAlignment,
-                    Size = sizeOfBlock * elementCount,
-                };
-            }
-        }
-
         [TestMethod]
         public void AsUniformBufferUsage()
         {
@@ -172,7 +95,7 @@ namespace Neutrino.UnitTests
                 }
             );
 
-            MgBufferUsageFlagBits actual = selector.GetMaterialUsage();
+            MgBufferUsageFlagBits actual = selector.GetAppropriateBufferUsage();
             Assert.AreEqual(expected, actual);
         }
 
@@ -192,7 +115,7 @@ namespace Neutrino.UnitTests
                 }
             );
 
-            MgBufferUsageFlagBits actual = selector.GetMaterialUsage();
+            MgBufferUsageFlagBits actual = selector.GetAppropriateBufferUsage();
             Assert.AreEqual(expected, actual);
         }
 
@@ -212,7 +135,7 @@ namespace Neutrino.UnitTests
                 }
             );
 
-            var actual = selector.GetNoOfMaterials(
+            var actual = selector.GetElementRange(
                 MgBufferUsageFlagBits.STORAGE_BUFFER_BIT,
                 5U,                
                 20U);
@@ -239,7 +162,7 @@ namespace Neutrino.UnitTests
                 }
             );
 
-            var actual = selector.GetNoOfMaterials(
+            var actual = selector.GetElementRange(
                 MgBufferUsageFlagBits.STORAGE_BUFFER_BIT,
                 5U,
                 20U);
@@ -266,7 +189,7 @@ namespace Neutrino.UnitTests
                 }
             );
 
-            var actual = selector.GetNoOfMaterials(
+            var actual = selector.GetElementRange(
                 MgBufferUsageFlagBits.STORAGE_BUFFER_BIT,
                 5U,
                 20U);
@@ -293,7 +216,7 @@ namespace Neutrino.UnitTests
                 }
             );
 
-            var actual = selector.GetNoOfMaterials(
+            var actual = selector.GetElementRange(
                 MgBufferUsageFlagBits.UNIFORM_BUFFER_BIT,
                 5U,
                 20U);
@@ -320,7 +243,7 @@ namespace Neutrino.UnitTests
                 }
             );
 
-            var actual = selector.GetNoOfMaterials(
+            var actual = selector.GetElementRange(
                 MgBufferUsageFlagBits.UNIFORM_BUFFER_BIT,
                 5U,
                 20U);
@@ -347,7 +270,7 @@ namespace Neutrino.UnitTests
                 }
             );
 
-            var actual = selector.GetNoOfMaterials(
+            var actual = selector.GetElementRange(
                 MgBufferUsageFlagBits.UNIFORM_BUFFER_BIT,
                 5U,
                 20U);
@@ -374,7 +297,7 @@ namespace Neutrino.UnitTests
                 }
             );
 
-            var actual = selector.GetNoOfMaterials(
+            var actual = selector.GetElementRange(
                 MgBufferUsageFlagBits.UNIFORM_BUFFER_BIT,
                 5U,
                 20U);

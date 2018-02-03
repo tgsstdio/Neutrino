@@ -59,6 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BitmapImageSourceExaminer.cs" />
+    <Compile Include="CameraUBO.cs" />
     <Compile Include="DryIoc\AsyncExecutionFlowScopeContext.cs" />
     <Compile Include="DryIoc\Container.cs" />
     <Compile Include="DryIoc\FastExpressionCompiler.cs" />
@@ -68,6 +69,7 @@
     <Compile Include="GameWindow.cs" />
     <Compile Include="IDemoApplication.cs" />
     <Compile Include="IMgImageSourceExaminer.cs" />
+    <Compile Include="LightUBO.cs" />
     <Compile Include="MgGraphicsConfigurationManager.cs" />
     <Compile Include="OffscreenDemoApplication.cs" />
     <Compile Include="Program.cs" />

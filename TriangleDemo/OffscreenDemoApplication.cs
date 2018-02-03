@@ -4,6 +4,7 @@ using Neutrino;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace TriangleDemo
 {
@@ -45,6 +46,69 @@ namespace TriangleDemo
 
         #region Prepare methods 
 
+        class ScenePass
+        {
+            public IMgEffectFramework RenderTarget { get; set; }
+            public EffectPipelineDictionary Variants { get; set; }
+
+            public ScenePassEffect[] Effects { get; set; }
+
+            internal void Initialize(IMgDevice device, SceneMeshPrimitive[] meshPrimitives, MgtfMaterial[] materials)
+            {
+                Variants = new EffectPipelineDictionary();
+                foreach(var eff in Effects)
+                {
+                    InitializeVariants(device, eff, meshPrimitives, materials);
+                }
+            }
+
+            private static EffectVariantOptions ExtractVariantOptions(
+                MgFrontFace front,
+                MgPrimitiveTopology topology,
+                MgtfMaterial material)
+            {
+                return new EffectVariantOptions
+                {
+                    FrontFace = front,
+                    CullMode =
+                        material.DoubleSided
+                        ? MgCullModeFlagBits.NONE
+                        : MgCullModeFlagBits.BACK_BIT,
+                };
+            }
+
+            private void InitializeVariants(
+                IMgDevice device,
+                ScenePassEffect passEffect,
+                SceneMeshPrimitive[] meshPrimitives,
+                MgtfMaterial[] materials)
+            {
+                foreach (var primitive in meshPrimitives)
+                {
+                    var vertexInput = new PerVertexInputPipelineState(primitive.VertexDefinition);
+                    var material = materials[primitive.Material];
+
+                    foreach (var frontFace in new[] { MgFrontFace.COUNTER_CLOCKWISE, MgFrontFace.CLOCKWISE })
+                    {
+                        var options = ExtractVariantOptions(frontFace, primitive.Topology, material);
+
+                        var ev = passEffect.Factory.Initialize(device,
+                            passEffect.EffectLayout.Layout,
+                            RenderTarget.Renderpass,
+                            vertexInput,
+                            options);
+                        Variants.Add(ev.Key, ev);
+                    }
+                }
+             }
+        }
+
+        class ScenePassEffect
+        {
+            public EffectLayout EffectLayout { get; set; }
+            public IEffectVariantFactory Factory { get; set; }
+        }
+
         public void Prepare(IMgGraphicsConfiguration configuration, IMgGraphicsDevice screen)
         {
             var loader = new Loader();
@@ -63,7 +127,13 @@ namespace TriangleDemo
                 var staticRequest = new MgStorageBlockAllocationRequest();
                 // allocate partitions for static data                
                 // mesh
-                var meshPrimitives = AllocateMeshes(staticRequest, metaData.Meshes, metaData.Accessors, metaData.BufferViews);
+                var meshLocations = AllocateMeshes(staticRequest, metaData.Meshes, metaData.Accessors, metaData.BufferViews);
+
+                var materials = new List<MgtfMaterial>();
+                var meshPrimitives = ExtractMeshPrimitives(materials,
+                    metaData.Meshes,
+                    meshLocations,
+                    metaData.Materials);
 
                 // images
                 var images = ExamineImages(data.Images, data.Buffers);
@@ -72,7 +142,7 @@ namespace TriangleDemo
 
                 var staticCreateInfo = new MgOptimizedStorageCreateInfo
                 {
-                   Allocations = staticRequest.ToArray(),
+                    Allocations = staticRequest.ToArray(),
                 };
 
                 mStaticStorage = mBuilder.Build(staticCreateInfo);
@@ -80,12 +150,28 @@ namespace TriangleDemo
                 // build static artifacts
                 // render target
                 // descriptor set layout + pipeline layout   
-                var effectPool = mPbrFactory.CreateEffectLayout(configuration.Device);
+                var pass = new ScenePass
+                {
+                    RenderTarget = screen,
+                    Effects = new[] {
+                        new ScenePassEffect
+                        {
+                            Factory = mPbrFactory,
+                            EffectLayout = mPbrFactory.CreateEffectLayout(configuration.Device),
+                        }
+                    }
+                };
 
-                // pipeline     
+                pass.Initialize(
+                    configuration.Device,
+                    meshPrimitives,
+                    metaData.Materials);
 
                 // allocate dynamic data
-                // lights 
+                var dynamiceRequest = new MgStorageBlockAllocationRequest();
+
+                var limits = new MgPhysicalDeviceLimits();
+                var worldData = AllocateWorldData(dynamiceRequest, limits.MaxUniformBufferRange);
                 // materials
                 // cameras
                 // per instance data
@@ -106,6 +192,141 @@ namespace TriangleDemo
                 // build command buffers
             }
         }
+
+        public class WorldData
+        {
+            public int StorageIndex { get; set; }
+            public uint MaxNoOfCameras { get; set; }
+            public uint MaxNoOfLights { get; set; }            
+        }
+
+        private WorldData AllocateWorldData(MgStorageBlockAllocationRequest dynamiceRequest, uint maxUniformBufferRange)
+        {
+            const uint LOW_RES = 16384;
+            const uint HIGH_RES = 65536;
+
+            if (maxUniformBufferRange < LOW_RES)
+            {
+                throw new InvalidOperationException("not enough space");
+            }
+
+            var noOfCameras = 32U;
+            var noOfLights = 256U;
+
+            if (maxUniformBufferRange >= HIGH_RES)
+            {
+                noOfCameras = 128U;
+                noOfLights = 1024U;
+            }
+
+            var upperLimit = (maxUniformBufferRange >= HIGH_RES)
+                ? HIGH_RES
+                : LOW_RES;
+
+            var cameraStride = Marshal.SizeOf(typeof(CameraUBO));
+            var lightStride = Marshal.SizeOf(typeof(LightUBO));
+
+            var cameraLength = cameraStride * noOfCameras;
+            var lightLength = lightStride * noOfLights;
+
+            var totalSize = (ulong)(cameraLength + lightLength);
+
+            if (totalSize > upperLimit)
+            {
+                throw new InvalidOperationException("not enough space for uniform block");
+            }
+
+            var location = dynamiceRequest.Insert(
+                new MgStorageBlockAllocationInfo
+                {
+                    Usage = MgBufferUsageFlagBits.UNIFORM_BUFFER_BIT,
+                    MemoryPropertyFlags = MgMemoryPropertyFlagBits.HOST_VISIBLE_BIT,
+                    Size = totalSize,
+                }
+            );
+
+            return new WorldData
+            {
+                StorageIndex = location,
+                MaxNoOfCameras = noOfCameras,
+                MaxNoOfLights = noOfLights,
+            };
+        }
+
+        private SceneMeshPrimitive[] ExtractMeshPrimitives(
+            List<MgtfMaterial> materials,
+            MgtfMesh[] meshes,
+            GltfPrimitiveStorageLocation[] meshLocations,
+            MgtfMaterial[] srcMaterials
+        )
+        {
+            var primitives = new List<SceneMeshPrimitive>();
+
+            // add default
+            materials.Add(
+                new MgtfMaterial
+                {
+                    BaseColorTexture = null,
+                    NormalTexture = null,
+                    EmissiveTexture = null,
+                    OcclusionTexture = null,
+                    RoughnessTexture = null,
+                    AlphaMode = new MgtfAlphaModeEquation { A = 1, B = 0, C = 0},
+                    BaseColorFactor = new MgVec4f(1f, 1f, 1f, 1f),
+                    EmissiveFactor = new Color3f { R = 0f, G = 0f, B = 0f },
+                    AlphaCutoff = 0.5f,
+                    MetallicFactor = 1f,
+                    RoughnessFactor = 1f,
+                    OcclusionStrength = 1f,
+                }
+            );
+
+            materials.AddRange(srcMaterials);            
+
+            foreach(var location in meshLocations)
+            {
+                var mesh = meshes[location.Mesh];
+
+                var srcPrimitive = mesh.Primitives[location.MeshPrimitive];               
+
+                var primitive = new SceneMeshPrimitive
+                {
+                    Mesh = location.Mesh,
+                    Topology = srcPrimitive.Topology,
+                    Indices = 
+                        location.Index.HasValue
+                        ? new int[] {location.Index.Value }
+                        : new int[] { },
+                    Vertices = new int[] {location.Vertex},
+                    VertexDefinition = location.FinalDefinition,
+                    Material = 
+                        !srcPrimitive.Material.HasValue
+                        ? 0
+                        : (srcPrimitive.Material.Value + 1), 
+                    IndexCount = srcPrimitive.IndexCount,
+                    VertexCount = srcPrimitive.VertexCount,
+                };
+
+                primitives.Add(primitive);
+            }
+
+            return primitives.ToArray();
+        }
+
+        class SceneMeshPrimitive 
+        {
+            public int Mesh { get; set; }
+            public int Material { get; set; }
+
+            public MgPrimitiveTopology Topology { get; set; }
+            public PerVertexDefinition VertexDefinition { get; set; }
+            public int[] Vertices { get; set; }
+            public int[] Indices { get; set; }
+            public uint IndexCount { get; internal set; }
+            public uint VertexCount { get; internal set; }
+        }
+
+
 
         private MgImageSource[] ExamineImages(MgtfImage[] images, MgtfBuffer[] buffers)
         {
@@ -152,13 +373,18 @@ namespace TriangleDemo
             MgtfBufferView[] bufferViews)
         {
             var noOfMeshes = meshes != null ? meshes.Length : 0;
-            var locations = new GltfPrimitiveStorageLocation[noOfMeshes];
+            var locations = new List<GltfPrimitiveStorageLocation>();
             for (var i =0; i < noOfMeshes; i += 1)
             {
                 var mesh = meshes[i];
 
-                foreach (var primitive in mesh.Primitives)
+                var noOfPrimitives = mesh.Primitives != null
+                    ? mesh.Primitives.Length
+                    : 0;
+
+                for (var j= 0; j < noOfPrimitives; j += 1)
                 {
+                    var primitive = mesh.Primitives[j];
                     var locator = primitive.VertexLocations;
 
                     int? indexLocation = null;
@@ -188,16 +414,20 @@ namespace TriangleDemo
                     }
                     copyOperations.AddRange(vertexCopies);
 
-                    locations[i] = new GltfPrimitiveStorageLocation
+                    var location = new GltfPrimitiveStorageLocation
                     {
+                        Mesh = i,
+                        MeshPrimitive = j,
                         FinalDefinition = PadVertexDefinition(primitive.InitialDefinition),
                         Index = indexLocation,
                         Vertex = vertexLocation,
                         CopyOperations = copyOperations.ToArray(),
                     };
+
+                    locations.Add(location);
                 }
             }
-            return locations;
+            return locations.ToArray();
         }
 
         private static PerVertexDefinition PadVertexDefinition(PerVertexDefinition modelDefinition)

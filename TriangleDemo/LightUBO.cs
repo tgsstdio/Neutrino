@@ -1,6 +1,8 @@
-﻿namespace Neutrino.Library
+﻿using Neutrino;
+
+namespace TriangleDemo
 {
-    class LightUBO
+    public class LightUBO
     {
         public TkVector4 LightColor { get; set; }
         public TkVector4 LightDirection { get; set; }

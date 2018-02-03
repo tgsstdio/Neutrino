@@ -456,24 +456,41 @@ namespace Neutrino
 
         public static MgtfMaterial ExtractNewMaterial(Material src)
         {
-            MgtfMaterialTexture BaseColorTexture = null;
+            MgtfMaterialTexture baseColorTexture = null;
+            MgtfMaterialTexture roughnessTexture = null;
             var baseColorFactor = new MgVec4f(1f, 1f, 1f, 1f);
-            if (src.PbrMetallicRoughness != null)
+            var metallicFactor = 1f;
+            var roughnessFactor = 1f;
+
+            var pbrInfo = src.PbrMetallicRoughness;
+            if (pbrInfo != null)
             {
                 baseColorFactor = new MgVec4f
                 {
-                    X = src.PbrMetallicRoughness.BaseColorFactor[0],
-                    Y = src.PbrMetallicRoughness.BaseColorFactor[1],
-                    Z = src.PbrMetallicRoughness.BaseColorFactor[2],
-                    W = src.PbrMetallicRoughness.BaseColorFactor[3],
+                    X = pbrInfo.BaseColorFactor[0],
+                    Y = pbrInfo.BaseColorFactor[1],
+                    Z = pbrInfo.BaseColorFactor[2],
+                    W = pbrInfo.BaseColorFactor[3],
                 };
 
-                if (src.PbrMetallicRoughness.BaseColorTexture != null)
+                if (pbrInfo.BaseColorTexture != null)
                 {
-                    BaseColorTexture = new MgtfMaterialTexture
+                    baseColorTexture = new MgtfMaterialTexture
                     {
-                        Texture = src.PbrMetallicRoughness.BaseColorTexture.Index,
-                        TexCoords = src.PbrMetallicRoughness.BaseColorTexture.TexCoord,
+                        Texture = pbrInfo.BaseColorTexture.Index,
+                        TexCoords = pbrInfo.BaseColorTexture.TexCoord,
+                    };
+
+                    metallicFactor = pbrInfo.MetallicFactor;
+                    roughnessFactor = pbrInfo.RoughnessFactor;
+                }
+
+                if (pbrInfo.MetallicRoughnessTexture != null)
+                {
+                    roughnessTexture = new MgtfMaterialTexture
+                    {
+                        Texture = pbrInfo.MetallicRoughnessTexture.Index,
+                        TexCoords = pbrInfo.MetallicRoughnessTexture.TexCoord,
                     };
                 }
             }
@@ -528,7 +545,7 @@ namespace Neutrino
                 DoubleSided = src.DoubleSided,
                 AlphaCutoff = src.AlphaCutoff,
                 AlphaMode = ExtractAlphaMode(src.AlphaMode),
-                BaseColorTexture = BaseColorTexture,
+                BaseColorTexture = baseColorTexture,
                 BaseColorFactor = baseColorFactor,
                 NormalTexture = NormalTexture,
                 NormalScale = normalScale,
@@ -536,6 +553,9 @@ namespace Neutrino
                 EmissiveFactor = emissiveFactor,
                 OcclusionTexture = OcclusionTexture,
                 OcclusionStrength = strength,
+                MetallicFactor = metallicFactor,
+                RoughnessFactor = roughnessFactor,
+                RoughnessTexture = roughnessTexture,
             };
         }
 

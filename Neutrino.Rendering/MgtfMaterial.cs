@@ -15,6 +15,9 @@ namespace Neutrino
         public bool DoubleSided { get; set; }
         public float AlphaCutoff { get; set; }
         public MgtfAlphaModeEquation AlphaMode { get; set; }
+        public float MetallicFactor { get; set; }
+        public float RoughnessFactor { get; set; }
+        public MgtfMaterialTexture RoughnessTexture { get; set; }
     }
     
 }

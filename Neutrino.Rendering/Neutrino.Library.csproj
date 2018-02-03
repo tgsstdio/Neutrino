@@ -46,7 +46,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CameraUBO.cs" />
     <Compile Include="Color3f.cs" />
     <Compile Include="DataLoader.cs" />
     <Compile Include="DataURL.cs" />
@@ -92,7 +91,6 @@
     <Compile Include="IGltfSceneLoader.cs" />
     <Compile Include="IPbrEffectPath.cs" />
     <Compile Include="IMgtfPerVertexDataLocator.cs" />
-    <Compile Include="LightUBO.cs" />
     <Compile Include="MaterialUBO.cs" />
     <Compile Include="MathHelper.cs" />
     <Compile Include="MgStorageBlockAllocationRequest.cs" />
@@ -100,6 +98,8 @@
     <Compile Include="MgtfTexture.cs" />
     <Compile Include="PbrEffectVariantFactory.cs" />
     <Compile Include="PerInstance.cs" />
+    <Compile Include="PerTextureStorageQuery.cs" />
+    <Compile Include="PerTextureStorageSettings.cs" />
     <Compile Include="PerVertexColorType.cs" />
     <Compile Include="PerVertexDataLocator.cs" />
     <Compile Include="PerVertexDefinition.cs" />

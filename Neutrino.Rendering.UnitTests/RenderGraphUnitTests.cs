@@ -200,7 +200,6 @@ namespace Neutrino.UnitTests
                     var meshPrimitive = Scene.MeshPrimitives[range.MeshPrimitive];
                     foreach (var drawCall in range.InstanceDrawCalls)
                     {
-                        // TODO storage cmdBuf.CmdBindVertexBuffers();
                         var perInstance = mDynamicStorage.Map.Allocations[drawCall.PerInstance[sliceIndex]];
                         var perInstanceBlock = mDynamicStorage.Storage.Blocks[perInstance.BlockIndex];
 
@@ -209,6 +208,7 @@ namespace Neutrino.UnitTests
 
                         cmdBuf.CmdBindVertexBuffers(
                             0,
+                            // TODO: multiple per-vertex buffers 
                             new[] {
                                 perVertexBlock.Buffer,
                                 perInstanceBlock.Buffer,
@@ -346,25 +346,25 @@ namespace Neutrino.UnitTests
         public int MeshPrimitive { get; set; }
     }
 
-    [TestClass]
-    public class RenderGraphUnitTests
-    {
-        public RenderGroup GenerateGroup(uint noOfMaterials, uint upperLimit)
-        {
-            return new RenderGroup
-            {
-                Chunks = new List<RenderInstanceChunk>(),
-            };
-        }
+    //[TestClass]
+    //public class RenderGraphUnitTests
+    //{
+    //    public RenderGroup GenerateGroup(uint noOfMaterials, uint upperLimit)
+    //    {
+    //        return new RenderGroup
+    //        {
+    //            Chunks = new List<RenderInstanceChunk>(),
+    //        };
+    //    }
 
-        [TestMethod]
-        public void TestMethod()
-        {
-            const uint NO_OF_MATERIALS = 11U;
-            const uint UPPER_LIMIT = 5;
+    //    [TestMethod]
+    //    public void TestMethod()
+    //    {
+    //        const uint NO_OF_MATERIALS = 11U;
+    //        const uint UPPER_LIMIT = 5;
 
-            var group = GenerateGroup(NO_OF_MATERIALS, UPPER_LIMIT);
-            Assert.IsNotNull(group.Chunks);
-        }
-    }
+    //        var group = GenerateGroup(NO_OF_MATERIALS, UPPER_LIMIT);
+    //        Assert.IsNotNull(group.Chunks);
+    //    }
+    //}
 }

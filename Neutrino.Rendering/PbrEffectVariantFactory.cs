@@ -55,26 +55,20 @@ namespace Neutrino
             {
                 Bindings = new[]
                 {
-                    // CAMERA
+                    // WORLD DATA
+                        // CAMERAS 
+                        // LIGHTS
                     new MgDescriptorSetLayoutBinding
                     {
                         Binding = 0,
                         DescriptorType = MgDescriptorType.UNIFORM_BUFFER,
-                        DescriptorCount = mSettings.NoOfCamerasPerGroup,
-                        StageFlags = MgShaderStageFlagBits.VERTEX_BIT,
-                    },
-                    // LIGHTS
-                    new MgDescriptorSetLayoutBinding
-                    {
-                        Binding = 1,
-                        DescriptorType = MgDescriptorType.UNIFORM_BUFFER,
-                        DescriptorCount = mSettings.NoOfLightsPerGroup,
+                        DescriptorCount = 1,
                         StageFlags = MgShaderStageFlagBits.VERTEX_BIT,
                     },
                     // MATERIALS
                     new MgDescriptorSetLayoutBinding
                     {
-                        Binding = 2,
+                        Binding = 1,
                         DescriptorType = MgDescriptorType.UNIFORM_BUFFER,
                         DescriptorCount = mSettings.NoOfMaterialsPerGroup,
                         StageFlags = MgShaderStageFlagBits.FRAGMENT_BIT,
@@ -82,7 +76,7 @@ namespace Neutrino
                     // TEXTURES
                     new MgDescriptorSetLayoutBinding
                     {
-                        Binding = 3,
+                        Binding = 5,
                         DescriptorType = MgDescriptorType.COMBINED_IMAGE_SAMPLER,
                         DescriptorCount = mSettings.NoOfTexturesPerGroup,
                         StageFlags = MgShaderStageFlagBits.FRAGMENT_BIT,

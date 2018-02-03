@@ -1,6 +1,7 @@
-﻿using System.Runtime.InteropServices;
+﻿using Neutrino;
+using System.Runtime.InteropServices;
 
-namespace Neutrino
+namespace TriangleDemo
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct CameraUBO
