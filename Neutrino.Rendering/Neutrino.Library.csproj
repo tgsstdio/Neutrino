@@ -50,6 +50,7 @@
     <Compile Include="DataLoader.cs" />
     <Compile Include="DataURL.cs" />
     <Compile Include="Effect.cs" />
+    <Compile Include="EffectLayout.cs" />
     <Compile Include="EffectPipelineDictionary.cs" />
     <Compile Include="EffectVariant.cs" />
     <Compile Include="EffectVariantDefinition.cs" />
@@ -96,10 +97,11 @@
     <Compile Include="MgStorageBlockAllocationRequest.cs" />
     <Compile Include="MgtfSampler.cs" />
     <Compile Include="MgtfTexture.cs" />
+    <Compile Include="PbrEffectSettings.cs" />
     <Compile Include="PbrEffectVariantFactory.cs" />
     <Compile Include="PerInstance.cs" />
-    <Compile Include="PerTextureStorageQuery.cs" />
-    <Compile Include="PerTextureStorageSettings.cs" />
+    <Compile Include="PerMaterialTextureStorageQuery.cs" />
+    <Compile Include="PerMaterialStorageSettings.cs" />
     <Compile Include="PerVertexColorType.cs" />
     <Compile Include="PerVertexDataLocator.cs" />
     <Compile Include="PerVertexDefinition.cs" />

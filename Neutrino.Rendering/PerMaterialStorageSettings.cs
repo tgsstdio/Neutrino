@@ -2,7 +2,7 @@
 
 namespace Neutrino
 {
-    public class PerTextureStorageSettings
+    public class PerMaterialStorageSettings
     {
         public uint ElementRange { get; set; }
         public MgBufferUsageFlagBits Usage { get; set; }

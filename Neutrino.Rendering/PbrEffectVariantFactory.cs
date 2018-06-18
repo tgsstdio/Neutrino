@@ -4,42 +4,6 @@ using System.Diagnostics;
 
 namespace Neutrino
 {
-    public class PbrEffectSettings
-    {
-        public uint NoOfCamerasPerGroup { get; set; }
-        public uint NoOfLightsPerGroup { get; set; }
-        public uint NoOfMaterialsPerGroup { get; internal set; }
-        public uint NoOfTexturesPerGroup { get; internal set; }
-    }
-
-    public class EffectLayout
-    {
-        public EffectLayout(
-            IMgDescriptorSetLayout descriptorSetLayout,
-            IMgPipelineLayout layout
-        )
-        {
-            DescriptorSetLayout = descriptorSetLayout;
-            Layout = layout;
-        }
-
-        public IMgDescriptorSetLayout DescriptorSetLayout { get; }
-        public IMgPipelineLayout Layout { get; }
-
-        public void Destroy(IMgDevice device)
-        {
-            if (Layout != null)
-            {
-                Layout.DestroyPipelineLayout(device, null);
-            }
-
-            if (DescriptorSetLayout != null)
-            {
-                DescriptorSetLayout.DestroyDescriptorSetLayout(device, null);
-            }
-        }
-    }
-
     public class PbrEffectVariantFactory : IEffectVariantFactory
     {
         private IPbrEffectPath mPath;
@@ -47,6 +11,7 @@ namespace Neutrino
         public PbrEffectVariantFactory(IPbrEffectPath path, PbrEffectSettings settings)
         {
             mPath = path;
+            mSettings = settings;
         }
 
         public EffectLayout CreateEffectLayout(IMgDevice device)

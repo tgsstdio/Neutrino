@@ -11,5 +11,7 @@ namespace Neutrino
             PerVertexInputPipelineState vertexInput,
             EffectVariantOptions options
         );
+
+        EffectLayout CreateEffectLayout(IMgDevice device);
     }
 }

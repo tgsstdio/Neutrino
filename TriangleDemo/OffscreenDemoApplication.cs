@@ -13,9 +13,9 @@ namespace TriangleDemo
         private IMgImageSourceExaminer mImageExaminer;
         private MgOptimizedStorageBuilder mBuilder;
         private MgOptimizedStorageContainer mStaticStorage;
-        private PbrEffectVariantFactory mPbrFactory;
+        private IEffectVariantFactory mPbrFactory;
 
-        public OffscreenDemoApplication(IMgImageSourceExaminer examiner, MgOptimizedStorageBuilder builder, PbrEffectVariantFactory pbrFactory)
+        public OffscreenDemoApplication(IMgImageSourceExaminer examiner, MgOptimizedStorageBuilder builder, IEffectVariantFactory pbrFactory)
         {
             mBuilder = builder;
             mImageExaminer = examiner;
@@ -168,12 +168,13 @@ namespace TriangleDemo
                     metaData.Materials);
 
                 // allocate dynamic data
-                var dynamiceRequest = new MgStorageBlockAllocationRequest();
+                var dynamicRequest = new MgStorageBlockAllocationRequest();
 
                 var limits = new MgPhysicalDeviceLimits();
-                var worldData = AllocateWorldData(dynamiceRequest, limits.MaxUniformBufferRange);
-                // materials
-                // cameras
+                var worldData = AllocateWorldData(dynamicRequest, limits.MaxUniformBufferRange);
+
+                var storageIndices = AllocateMaterials(materials, dynamicRequest, limits);
+
                 // per instance data
 
                 // build dynamic artifacts
@@ -191,6 +192,71 @@ namespace TriangleDemo
 
                 // build command buffers
             }
+        }
+
+        private static int[] AllocateMaterials(List<MgtfMaterial> materials, MgStorageBlockAllocationRequest dynamicRequest, MgPhysicalDeviceLimits limits)
+        {
+            // materials
+            var query = new PerMaterialTextureStorageQuery(limits);
+            var noOfSamplers = query.GetMaxNoOfCombinedImageSamplers();
+
+            const uint PBR_TEXTURES_PER_MATERIALS = 5U;
+            var blockSize = (uint)Marshal.SizeOf(typeof(MaterialUBO));
+
+            const uint HI_RES = 32U;
+            const uint LOW_RES = 16U;
+
+            // GONNA RESERVE 5 BINDINGS SLOTS 
+            // IN VK, a global binding range is used by all descriptors     
+            // IN OPENGL/WEBGL, buffer and textures have the own binding range
+            // THEREFORE, Mg standard is not to overlap binding values between descriptors
+            // OTHERWISE, separate sets implementation (TODO) could be used to handle separate ranges
+            const uint NO_OF_RESERVED_BINDINGS = 5U;
+            var range = noOfSamplers - NO_OF_RESERVED_BINDINGS;
+
+            if (noOfSamplers < LOW_RES)
+                throw new InvalidOperationException("not enough combined samplers for pbr");
+
+            // pick between hi res and low res
+            bool isHighRes = (noOfSamplers >= HI_RES);
+            uint bindableImages = isHighRes ? 32U : 16U;
+
+            var elementRange = query.GetElementRange(
+                MgBufferUsageFlagBits.UNIFORM_BUFFER_BIT,
+                PBR_TEXTURES_PER_MATERIALS,
+                blockSize);
+
+            if (isHighRes)
+            {
+                // floor(no_of_samplers - reserved_slots / textures_per_mat) = floor((32 - 5)/5) = 5
+                if (elementRange < 5U)
+                    throw new InvalidOperationException("hi res not applicable");
+                elementRange = 5U;
+            }
+            else
+            {
+                // floor(no_of_samplers - reserved_slots / textures_per_mat) = floor((16 - 5)/5) = 2
+                if (elementRange < 2U)
+                    throw new InvalidOperationException("low res not applicable");
+                elementRange = 2U;
+            }
+
+            var noOfAllocations = (materials.Count / elementRange);
+            noOfAllocations += (materials.Count % elementRange == 0) ? 0 : 1;
+
+            var info = new MgStorageBlockAllocationInfo
+            {
+                Usage = MgBufferUsageFlagBits.UNIFORM_BUFFER_BIT,
+                MemoryPropertyFlags = MgMemoryPropertyFlagBits.HOST_VISIBLE_BIT,
+                Size = elementRange * blockSize,
+            };
+
+            var materialIndices = new int[noOfAllocations];
+            for (var i = 0; i < noOfAllocations; i += 1)
+            {
+                materialIndices[i] = dynamicRequest.Insert(info);
+            }
+            return materialIndices;
         }
 
         public class WorldData

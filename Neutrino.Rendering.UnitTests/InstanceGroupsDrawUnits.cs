@@ -83,16 +83,13 @@ namespace Neutrino.UnitTests
         public void AsUniformBufferUsage()
         {
             var expected = MgBufferUsageFlagBits.UNIFORM_BUFFER_BIT;
-            var selector = new PerTextureStorageQuery(
-                new MgPhysicalDeviceProperties
+            var selector = new PerMaterialTextureStorageQuery(
+                new MgPhysicalDeviceLimits
                 {
-                    Limits = new MgPhysicalDeviceLimits
-                    {
-                        MaxPerStageDescriptorStorageBuffers = 0,
-                        MaxUniformBufferRange = 100,
-                        MaxStorageBufferRange = 1000,
-                    }
-                }
+                    MaxPerStageDescriptorStorageBuffers = 0,
+                    MaxUniformBufferRange = 100,
+                    MaxStorageBufferRange = 1000,
+                }                
             );
 
             MgBufferUsageFlagBits actual = selector.GetAppropriateBufferUsage();
@@ -103,16 +100,13 @@ namespace Neutrino.UnitTests
         public void AsStorageBufferUsage()
         {
             var expected = MgBufferUsageFlagBits.STORAGE_BUFFER_BIT;
-            var selector = new PerTextureStorageQuery(
-                new MgPhysicalDeviceProperties
+            var selector = new PerMaterialTextureStorageQuery(
+                new MgPhysicalDeviceLimits
                 {
-                    Limits = new MgPhysicalDeviceLimits
-                    {
-                        MaxPerStageDescriptorStorageBuffers = 1,
-                        MaxUniformBufferRange = 100,
-                        MaxStorageBufferRange = 1000,
-                    }
-                }
+                    MaxPerStageDescriptorStorageBuffers = 1,
+                    MaxUniformBufferRange = 100,
+                    MaxStorageBufferRange = 1000,
+                }                
             );
 
             MgBufferUsageFlagBits actual = selector.GetAppropriateBufferUsage();
@@ -122,17 +116,15 @@ namespace Neutrino.UnitTests
         [TestMethod]
         public void NewMaterials_0()
         {
-            var selector = new PerTextureStorageQuery(
-                new MgPhysicalDeviceProperties
+            var selector = new PerMaterialTextureStorageQuery(
+                new MgPhysicalDeviceLimits
                 {
-                    Limits = new MgPhysicalDeviceLimits
-                    {
-                        MaxUniformBufferRange = 100,
-                        MaxStorageBufferRange = 400,                        
-                        MaxPerStageDescriptorStorageBuffers = 1,
-                        MaxPerStageDescriptorSampledImages = 10,
-                    }
+                    MaxUniformBufferRange = 100,
+                    MaxStorageBufferRange = 400,                        
+                    MaxPerStageDescriptorStorageBuffers = 1,
+                    MaxPerStageDescriptorSampledImages = 10,
                 }
+                
             );
 
             var actual = selector.GetElementRange(
@@ -149,17 +141,14 @@ namespace Neutrino.UnitTests
         [TestMethod]
         public void NewMaterials_1()
         {
-            var selector = new PerTextureStorageQuery(
-                new MgPhysicalDeviceProperties
+            var selector = new PerMaterialTextureStorageQuery(
+                new MgPhysicalDeviceLimits
                 {
-                    Limits = new MgPhysicalDeviceLimits
-                    {
-                        MaxUniformBufferRange = 100,
-                        MaxStorageBufferRange = 500,
-                        MaxPerStageDescriptorStorageBuffers = 1,
-                        MaxPerStageDescriptorSampledImages = 100,
-                    }
-                }
+                    MaxUniformBufferRange = 100,
+                    MaxStorageBufferRange = 500,
+                    MaxPerStageDescriptorStorageBuffers = 1,
+                    MaxPerStageDescriptorSampledImages = 100,
+                }                
             );
 
             var actual = selector.GetElementRange(
@@ -176,17 +165,14 @@ namespace Neutrino.UnitTests
         [TestMethod]
         public void NewMaterials_2()
         {
-            var selector = new PerTextureStorageQuery(
-                new MgPhysicalDeviceProperties
+            var selector = new PerMaterialTextureStorageQuery(
+                new MgPhysicalDeviceLimits
                 {
-                    Limits = new MgPhysicalDeviceLimits
-                    {
-                        MaxUniformBufferRange = 100,
-                        MaxStorageBufferRange = 300,
-                        MaxPerStageDescriptorStorageBuffers = 1,
-                        MaxPerStageDescriptorSampledImages = 100,
-                    }
-                }
+                    MaxUniformBufferRange = 100,
+                    MaxStorageBufferRange = 300,
+                    MaxPerStageDescriptorStorageBuffers = 1,
+                    MaxPerStageDescriptorSampledImages = 100,
+                }                
             );
 
             var actual = selector.GetElementRange(
@@ -203,17 +189,14 @@ namespace Neutrino.UnitTests
         [TestMethod]
         public void NewMaterials_4()
         {
-            var selector = new PerTextureStorageQuery(
-                new MgPhysicalDeviceProperties
+            var selector = new PerMaterialTextureStorageQuery(                  
+                new MgPhysicalDeviceLimits
                 {
-                    Limits = new MgPhysicalDeviceLimits
-                    {
-                        MaxUniformBufferRange = 100,
-                        MaxStorageBufferRange = 400,
-                        MaxPerStageDescriptorStorageBuffers = 1,
-                        MaxPerStageDescriptorSampledImages = 10,
-                    }
-                }
+                    MaxUniformBufferRange = 100,
+                    MaxStorageBufferRange = 400,
+                    MaxPerStageDescriptorStorageBuffers = 1,
+                    MaxPerStageDescriptorSampledImages = 10,
+                }                
             );
 
             var actual = selector.GetElementRange(
@@ -230,17 +213,14 @@ namespace Neutrino.UnitTests
         [TestMethod]
         public void NewMaterials_5()
         {
-            var selector = new PerTextureStorageQuery(
-                new MgPhysicalDeviceProperties
+            var selector = new PerMaterialTextureStorageQuery(
+                new MgPhysicalDeviceLimits
                 {
-                    Limits = new MgPhysicalDeviceLimits
-                    {
-                        MaxUniformBufferRange = 100,
-                        MaxStorageBufferRange = 500,
-                        MaxPerStageDescriptorStorageBuffers = 1,
-                        MaxPerStageDescriptorSampledImages = 100,
-                    }
-                }
+                    MaxUniformBufferRange = 100,
+                    MaxStorageBufferRange = 500,
+                    MaxPerStageDescriptorStorageBuffers = 1,
+                    MaxPerStageDescriptorSampledImages = 100,
+                }                
             );
 
             var actual = selector.GetElementRange(
@@ -257,17 +237,14 @@ namespace Neutrino.UnitTests
         [TestMethod]
         public void NewMaterials_6()
         {
-            var selector = new PerTextureStorageQuery(
-                new MgPhysicalDeviceProperties
+            var selector = new PerMaterialTextureStorageQuery(
+                new MgPhysicalDeviceLimits
                 {
-                    Limits = new MgPhysicalDeviceLimits
-                    {
-                        MaxUniformBufferRange = 200,
-                        MaxStorageBufferRange = 300,
-                        MaxPerStageDescriptorStorageBuffers = 1,
-                        MaxPerStageDescriptorSampledImages = 100,
-                    }
-                }
+                    MaxUniformBufferRange = 200,
+                    MaxStorageBufferRange = 300,
+                    MaxPerStageDescriptorStorageBuffers = 1,
+                    MaxPerStageDescriptorSampledImages = 100,
+                }                
             );
 
             var actual = selector.GetElementRange(
@@ -284,17 +261,14 @@ namespace Neutrino.UnitTests
         [TestMethod]
         public void NewMaterials_7()
         {
-            var selector = new PerTextureStorageQuery(
-                new MgPhysicalDeviceProperties
+            var selector = new PerMaterialTextureStorageQuery(
+                new MgPhysicalDeviceLimits
                 {
-                    Limits = new MgPhysicalDeviceLimits
-                    {
-                        MaxUniformBufferRange = 400,
-                        MaxStorageBufferRange = 300,
-                        MaxPerStageDescriptorStorageBuffers = 1,
-                        MaxPerStageDescriptorSampledImages = 100,
-                    }
-                }
+                    MaxUniformBufferRange = 400,
+                    MaxStorageBufferRange = 300,
+                    MaxPerStageDescriptorStorageBuffers = 1,
+                    MaxPerStageDescriptorSampledImages = 100,
+                }                
             );
 
             var actual = selector.GetElementRange(
