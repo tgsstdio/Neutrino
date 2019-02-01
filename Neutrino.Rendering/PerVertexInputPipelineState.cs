@@ -87,7 +87,7 @@ namespace Neutrino
                     Binding = 1U,
                     Format = MgFormat.R32G32B32_SFLOAT,
                     Location = 11,
-                    Offset = (uint)Marshal.OffsetOf(typeof(PerInstance), "Translation"),
+                    Offset = (uint)Marshal.OffsetOf<PerInstance>("Translation"),
                 };
 
                 attributes.Add(attribute);

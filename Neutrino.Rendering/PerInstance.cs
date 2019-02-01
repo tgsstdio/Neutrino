@@ -5,11 +5,11 @@ namespace Neutrino
     [StructLayout(LayoutKind.Sequential)]
     public struct PerInstance
     {
-        public TkVector3 Translation { get; set; }
-        public TkVector3 Scale { get; set; }
-        public TkQuaternion Rotation { get; set; }
-        public int CameraIndex { get; set; }
-        public int MaterialIndex { get; set; }
-        public int LightIndex { get; set; }
+        public TkVector3 Translation;
+        public TkVector3 Scale;
+        public TkQuaternion Rotation;
+        public int CameraIndex;
+        public int MaterialIndex;
+        public int LightIndex;
     }
 }

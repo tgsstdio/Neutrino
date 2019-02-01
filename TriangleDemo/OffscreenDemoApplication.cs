@@ -129,11 +129,10 @@ namespace TriangleDemo
                 // mesh
                 var meshLocations = AllocateMeshes(staticRequest, metaData.Meshes, metaData.Accessors, metaData.BufferViews);
 
-                var materials = new List<MgtfMaterial>();
-                var meshPrimitives = ExtractMeshPrimitives(materials,
+                var meshPrimitives = ExtractMeshPrimitives(metaData.Materials,
+                    out MgtfMaterial[] sceneMaterials,
                     metaData.Meshes,
-                    meshLocations,
-                    metaData.Materials);
+                    meshLocations);
 
                 // images
                 var images = ExamineImages(data.Images, data.Buffers);
@@ -165,7 +164,7 @@ namespace TriangleDemo
                 pass.Initialize(
                     configuration.Device,
                     meshPrimitives,
-                    metaData.Materials);
+                    sceneMaterials);
 
                 // allocate dynamic data
                 var dynamicRequest = new MgStorageBlockAllocationRequest();
@@ -173,7 +172,7 @@ namespace TriangleDemo
                 var limits = new MgPhysicalDeviceLimits();
                 var worldData = AllocateWorldData(dynamicRequest, limits.MaxUniformBufferRange);
 
-                var storageIndices = AllocateMaterials(materials, dynamicRequest, limits);
+                var storageIndices = AllocateMaterials(sceneMaterials, dynamicRequest, limits);
 
                 // per instance data
 
@@ -194,7 +193,7 @@ namespace TriangleDemo
             }
         }
 
-        private static int[] AllocateMaterials(List<MgtfMaterial> materials, MgStorageBlockAllocationRequest dynamicRequest, MgPhysicalDeviceLimits limits)
+        private static int[] AllocateMaterials(MgtfMaterial[] materials, MgStorageBlockAllocationRequest dynamicRequest, MgPhysicalDeviceLimits limits)
         {
             // materials
             var query = new PerMaterialTextureStorageQuery(limits);
@@ -241,8 +240,8 @@ namespace TriangleDemo
                 elementRange = 2U;
             }
 
-            var noOfAllocations = (materials.Count / elementRange);
-            noOfAllocations += (materials.Count % elementRange == 0) ? 0 : 1;
+            var noOfAllocations = (materials.Length / elementRange);
+            noOfAllocations += (materials.Length % elementRange == 0) ? 0 : 1;
 
             var info = new MgStorageBlockAllocationInfo
             {
@@ -320,16 +319,16 @@ namespace TriangleDemo
         }
 
         private SceneMeshPrimitive[] ExtractMeshPrimitives(
-            List<MgtfMaterial> materials,
+            MgtfMaterial[] inputMaterials,
+            out MgtfMaterial[] outputMaterials,
             MgtfMesh[] meshes,
-            GltfPrimitiveStorageLocation[] meshLocations,
-            MgtfMaterial[] srcMaterials
-        )
+            GltfPrimitiveStorageLocation[] meshLocations)
         {
             var primitives = new List<SceneMeshPrimitive>();
 
             // add default
-            materials.Add(
+            var sceneMaterials = new List<MgtfMaterial>()
+            {
                 new MgtfMaterial
                 {
                     BaseColorTexture = null,
@@ -344,10 +343,11 @@ namespace TriangleDemo
                     MetallicFactor = 1f,
                     RoughnessFactor = 1f,
                     OcclusionStrength = 1f,
-                }
-            );
+                },
+            };
+            sceneMaterials.AddRange(inputMaterials);            
 
-            materials.AddRange(srcMaterials);            
+            outputMaterials = sceneMaterials.ToArray();            
 
             foreach(var location in meshLocations)
             {

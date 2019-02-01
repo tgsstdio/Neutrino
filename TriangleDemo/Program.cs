@@ -1,5 +1,6 @@
 ﻿using DryIoc;
 using Magnesium.Utilities;
+using Neutrino;
 using OpenTK;
 using System;
 
@@ -37,11 +38,23 @@ namespace TriangleDemo
 
                     using (var scope = container.OpenScope())
                     {
+                        var settings = new PbrEffectSettings
+                        {
+                            NoOfCamerasPerGroup = 1,
+                            NoOfLightsPerGroup = 10,
+                            NoOfMaterialsPerGroup = 10,
+                            NoOfTexturesPerGroup = 4,
+                        };
+
+                        scope.RegisterInstance(settings);
+
                         // GAME START
                         scope.Register<Example>(Reuse.InCurrentScope);
 
                         scope.Register<IDemoApplication, OffscreenDemoApplication>(Reuse.InCurrentScope);
                         scope.Register<IMgImageSourceExaminer, FreeImageSourceExaminer>(Reuse.InCurrentScope);
+                        scope.Register<IEffectVariantFactory, PbrEffectVariantFactory>(Reuse.InCurrentScope);
+                        scope.Register<IPbrEffectPath, DefaultPbrEffectPath>(Reuse.Singleton);
 
                         //container.Register<IDemoApplication, TriangleDemoApplication>(new PerScopeLifetime());
 
