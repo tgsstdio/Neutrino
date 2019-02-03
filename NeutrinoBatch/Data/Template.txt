@@ -1,0 +1,10 @@
+﻿#ifdef IS_VERT_POS
+layout (location = IS_VERT_POS_ORDER) in vec3 vertPosition;
+#endif
+
+void main(void) {
+	float a[NO_OF_CAMERAS];
+	int b[NO_OF_LIGHTS];
+	half m[NO_OF_MATERIALS];
+
+}

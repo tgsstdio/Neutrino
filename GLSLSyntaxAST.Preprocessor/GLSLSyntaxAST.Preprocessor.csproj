@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{ED65DE39-181D-4C06-9BA9-6B568614652B}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>GLSLSyntaxAST.Preprocessor</RootNamespace>
+    <AssemblyName>GLSLSyntaxAST.Preprocessor</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\x86</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\x86</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="BasePreprocessorInput.cs" />
+    <Compile Include="CppEnums.cs" />
+    <Compile Include="DoPreprocessing.cs" />
+    <Compile Include="ExtensionBehavior.cs" />
+    <Compile Include="InfoSink.cs" />
+    <Compile Include="InfoSinkBase.cs" />
+    <Compile Include="InputScanner.cs" />
+    <Compile Include="MacroInput.cs" />
+    <Compile Include="MacroSymbol.cs" />
+    <Compile Include="MarkerInput.cs" />
+    <Compile Include="Pragma.cs" />
+    <Compile Include="PreprocessorContext.cs" />
+    <Compile Include="PreprocessorToken.cs" />
+    <Compile Include="ShaderLanguage.cs" />
+    <Compile Include="SourceLocation.cs" />
+    <Compile Include="Standalone.cs" />
+    <Compile Include="StringInput.cs" />
+    <Compile Include="StringInputBuffer.cs" />
+    <Compile Include="TokenInput.cs" />
+    <Compile Include="TokenStream.cs" />
+    <Compile Include="TShader.cs" />
+    <Compile Include="UngotTokenInput.cs" />
+    <Compile Include="ZeroInput.cs" />
+    <Compile Include="Profile.cs" />
+    <Compile Include="EvalPrecedence.cs" />
+    <Compile Include="GLSLIntermediate.cs" />
+    <Compile Include="IInfoSinkComponent.cs" />
+    <Compile Include="PrefixType.cs" />
+    <Compile Include="SinkType.cs" />
+    <Compile Include="MessageType.cs" />
+    <Compile Include="SymbolLookup.cs" />
+    <Compile Include="Symbol.cs" />
+    <Compile Include="AtomLookup.cs" />
+    <Compile Include="ParseContext.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+</Project>
